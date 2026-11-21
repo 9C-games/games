@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snaketris – Snake trifft Tetris</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#f8fafc;font-family:system-ui,sans-serif;display:flex;justify-content:center;padding:20px}
+main{width:min(100%,440px);text-align:center}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+h1{font-size:clamp(23px,6vw,32px);margin:0}.stat{background:#1e293b;border:1px solid #475569;border-radius:10px;padding:8px 13px}.stat small{display:block;color:#94a3b8}.stat strong{font-size:22px}
+.boardwrap{position:relative;width:min(100%,360px);margin:auto}canvas{width:100%;height:auto;display:block;background:#101827;border:3px solid #64748b;border-radius:12px;touch-action:none}
+.overlay{position:absolute;inset:0;background:#101827eF;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}.overlay h2{font-size:30px;margin:0}.overlay p{margin:0;line-height:1.5}
+button{background:#263449;color:white;border:1px solid #52647c;border-radius:10px;padding:11px 16px;font-size:16px;font-weight:700;cursor:pointer}
+button:active{background:#475569}.primary{background:#2563eb;border-color:#2563eb}.actions{display:flex;justify-content:center;gap:10px;margin:14px 0}.legend{display:flex;justify-content:center;gap:10px;margin:12px 0}.legend span{background:#1e293b;padding:9px;border-radius:9px;font-size:13px}
+.dpad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,48px);gap:5px;justify-content:center;margin:10px auto}.dpad button{padding:3px;font-size:22px}
+#status{color:#cbd5e1;font-size:14px;min-height:22px;margin-top:8px}.help{color:#94a3b8;font-size:12px}
+</style>
+</head>
+<body>
+<main>
+ <div class="top">
+  <div style="text-align:left"><div style="font-size:11px;color:#94a3b8">DEIN HYBRID-GAME</div><h1>🐍 SNAKETRIS</h1></div>
+  <div class="stat"><small>PUNKTE</small><strong id="score">0</strong></div>
+  <div class="stat"><small>REKORD</small><strong id="best">0</strong></div>
+ </div>
+ <div class="boardwrap">
+  <canvas id="board" width="320" height="400" aria-label="Snaketris Spielfeld"></canvas>
+  <div class="overlay" id="overlay"><div style="font-size:42px">🐍</div><h2 id="overlayTitle">SNAKETRIS</h2><p id="overlayText">Sammle Futter, wachse und weiche den fallenden Tetris-Blöcken aus!</p><button class="primary" id="start">SPIEL STARTEN ▶</button></div>
+ </div>
+ <div class="legend"><span>🐍 Snake</span><span>🧱 Tetris-Blöcke</span><span>✨ Reihen löschen</span></div>
+ <div class="actions"><button id="pause">⏸ Pause</button><button id="restart">↻ Neustart</button></div>
+ <div style="font-weight:700;font-size:12px;color:#94a3b8">STEUERUNG</div>
+ <div class="dpad"><span></span><button data-dir="up">⬆️</button><span></span><button data-dir="left">⬅️</button><button data-dir="down">⬇️</button><button data-dir="right">➡️</button></div>
+ <div class="help">Pfeiltasten oder WASD funktionieren auch. Leertaste = Pause.</div>
+ <div id="status">Starte dein Abenteuer!</div>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');
+const W=16,H=20,S=20;
+let snake,dir,next,food,blocks,piece,score=0,best=0,timer=null,active=false,paused=false,steps=0;
+try{best=Number(localStorage.getItem('snaketrisBest'))||0}catch(e){}
+$('best').textContent=best;
+const shapes=[[[0,0],[1,0],[2,0],[3,0]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[0,1],[1,1],[2,1]],[[1,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[0,1],[1,1]],[[0,0],[1,0],[1,1],[2,1]],[[0,0],[1,0],[2,0],[2,1]]];
+const colors=['#38bdf8','#facc15','#a78bfa','#f472b6','#34d399','#fb923c','#60a5fa'];
+function rand(n){return Math.floor(Math.random()*n)}
+function occupied(x,y){return blocks.some(b=>b.x===x&&b.y===y)||snake.some(s=>s.x===x&&s.y===y)}
+function spawnFood(){let p;do{p={x:rand(W),y:rand(H)}}while(occupied(p.x,p.y));food=p}
+function newPiece(){let shape=shapes[rand(shapes.length)];piece={shape:shape.map(p=>[p[0]+6,p[1]]),color:colors[rand(colors.length)]}}
+function drawCell(x,y,color){ctx.fillStyle=color;ctx.fillRect(x*S+1,y*S+1,S-2,S-2);ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(x*S+3,y*S+3,S-6,3)}
+function draw(){
+ ctx.fillStyle='#101827';ctx.fillRect(0,0,320,400);ctx.strokeStyle='#ffffff0b';
+ for(let x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*S,0);ctx.lineTo(x*S,400);ctx.stroke()}
+ for(let y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*S);ctx.lineTo(320,y*S);ctx.stroke()}
+ blocks.forEach(b=>drawCell(b.x,b.y,b.color));
+ if(piece)piece.shape.forEach(([x,y])=>{if(y>=0)drawCell(x,y,piece.color)});
+ if(food){ctx.fillStyle='#fb7185';ctx.beginPath();ctx.arc(food.x*S+10,food.y*S+10,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#86efac';ctx.fillRect(food.x*S+11,food.y*S+1,3,5)}
+ snake.forEach((s,i)=>{drawCell(s.x,s.y,i===0?'#a3e635':'#65a30d');if(i===0){ctx.fillStyle='#17210b';ctx.fillRect(s.x*S+5,s.y*S+5,3,3);ctx.fillRect(s.x*S+12,s.y*S+5,3,3)}});
+}
+function reset(){
+ clearInterval(timer);snake=[{x:5,y:10},{x:4,y:10},{x:3,y:10}];dir={x:1,y:0};next={...dir};blocks=[];score=0;steps=0;paused=false;active=true;
+ spawnFood();newPiece();$('score').textContent='0';$('overlay').style.display='none';$('pause').textContent='⏸ Pause';$('status').textContent='Viel Glück!';run();draw();
+}
+function run(){clearInterval(timer);timer=setInterval(tick,175)}
+function end(){
+ active=false;clearInterval(timer);
+ if(score>best){best=score;try{localStorage.setItem('snaketrisBest',String(best))}catch(e){}}
+ $('best').textContent=best;
+ $('overlay').style.display='flex';$('overlayTitle').textContent='GAME OVER';$('overlayText').textContent='Deine Punkte: '+score+' – Schaffst du mehr?';$('start').textContent='NOCHMAL SPIELEN ↻';$('status').textContent='Spiel vorbei!';
+}
+function lockPiece(){
+ piece.shape.forEach(([x,y])=>{if(y>=0)blocks.push({x,y,color:piece.color})});
+ for(let y=H-1;y>=0;y--){
+  if(Array.from({length:W},(_,x)=>blocks.some(b=>b.x===x&&b.y===y)).every(Boolean)){
+   blocks=blocks.filter(b=>b.y!==y);blocks=blocks.map(b=>b.y<y?{...b,y:b.y+1}:b);score+=100;y++;$('status').textContent='💥 Reihe gelöscht! +100 Punkte!';
+  }
+ }
+ newPiece();
+}
+function tick(){
+ if(!active||paused)return;
+ dir=next;const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+ if(head.x<0||head.x>=W||head.y<0||head.y>=H||blocks.some(b=>b.x===head.x&&b.y===head.y)||snake.slice(0,-1).some(s=>s.x===head.x&&s.y===head.y)){end();draw();return}
+ snake.unshift(head);
+ if(head.x===food.x&&head.y===food.y){score+=10;spawnFood();$('status').textContent='Lecker! +10 Punkte!'}else snake.pop();
+ steps++;
+ if(steps%4===0){
+  piece.shape=piece.shape.map(([x,y])=>[x,y+1]);
+  if(piece.shape.some(([x,y])=>y>=H||blocks.some(b=>b.x===x&&b.y===y))){
+   piece.shape=piece.shape.map(([x,y])=>[x,y-1]);lockPiece();
+   if(blocks.some(b=>snake.some(s=>s.x===b.x&&s.y===b.y))){end()}
+  }
+ }
+ $('score').textContent=score;draw();
+}
+function change(d){
+ if(!active||paused)return;
+ const dirs={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}},v=dirs[d];
+ if(v&&!(v.x===-dir.x&&v.y===-dir.y))next=v;
+}
+document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>change(b.dataset.dir)));
+document.addEventListener('keydown',e=>{
+ const m={ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right'};
+ if(m[e.key]){e.preventDefault();change(m[e.key])}
+ if(e.key===' '&&active){e.preventDefault();togglePause()}
+});
+function togglePause(){
+ if(!active)return;paused=!paused;$('pause').textContent=paused?'▶ Weiter':'⏸ Pause';
+ $('status').textContent=paused?'Pausiert':'Weiter geht’s!';
+ if(paused){ctx.fillStyle='#0009';ctx.fillRect(0,0,320,400);ctx.fillStyle='white';ctx.font='bold 28px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSE',160,205)}else draw();
+}
+$('start').addEventListener('click',reset);$('restart').addEventListener('click',reset);$('pause').addEventListener('click',togglePause);draw();
+})();
+</script>
+</body>
+</html>

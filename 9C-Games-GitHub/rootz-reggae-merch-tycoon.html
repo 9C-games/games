@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ROOTZ – Reggae Merch Tycoon</title>
+<style>
+:root{--panel:#141a14ee;--line:#ffffff24;--gold:#f5c12e;--red:#d6342b;--green:#1f8a4c;--muted:#cfd8c8}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d120d;color:#f7f3e6;font-family:system-ui,Segoe UI,Arial,sans-serif}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #0006;backdrop-filter:blur(8px)}
+.stat{padding:8px 12px;min-width:98px;border-top:3px solid var(--gold)}
+.stat:nth-child(3n+2){border-top-color:var(--red)}.stat:nth-child(3n+3){border-top-color:var(--green)}
+.stat small{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.stat strong{font-size:16px}
+.brand{margin-right:auto;min-width:190px}
+.brand strong{color:var(--gold);letter-spacing:.05em;font-size:18px}
+.neg{color:#ff8a8a}
+#hud{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+#event{position:absolute;top:84px;left:50%;transform:translateX(-50%);padding:6px 14px;font-size:12px;color:var(--gold);pointer-events:none;white-space:nowrap}
+#shop{position:absolute;left:12px;top:150px;width:262px;max-height:calc(100vh - 170px);overflow:auto;padding:12px}
+#shop h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
+#shop p{font-size:11px;line-height:1.4;color:var(--muted);margin:4px 0 8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.row b{font-size:12px}.row small{display:block;font-size:10px;color:#a9b5a2}
+.price{display:flex;gap:4px;align-items:center;margin-top:4px}
+.price span{font-size:12px;min-width:44px;text-align:center}
+button{font:inherit;color:#fff;background:#2a3a2c;border:1px solid #ffffff30;border-radius:7px;padding:7px 9px;cursor:pointer}
+button:hover{filter:brightness(1.2)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button.red{background:var(--red)}button.gold{background:#b8891a;color:#111}button.green{background:var(--green)}
+.full{display:block;width:100%;margin:5px 0;text-align:left}
+hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+#toast{position:absolute;top:126px;left:50%;transform:translateX(-50%);background:#1d2a1f;border:1px solid var(--gold);border-radius:9px;padding:9px 14px;opacity:0;transition:opacity .2s;pointer-events:none;font-size:13px;white-space:nowrap}
+#toast.show{opacity:1}
+#hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 14px;font-size:11px;white-space:nowrap}
+#report{position:absolute;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:9}
+#report.show{display:flex}
+#report .box{width:min(90vw,380px);padding:22px;text-align:center}
+#report h1{margin:0 0 8px;color:var(--gold);font-size:22px}
+#report p{color:var(--muted);font-size:13px;line-height:1.6}
+#mobile{display:none;position:absolute;inset:auto 0 0 0;pointer-events:none}
+#stickBase{position:absolute;left:18px;bottom:18px;width:116px;height:116px;border-radius:50%;background:#0a0f0ab0;border:2px solid #ffffff55;pointer-events:auto;touch-action:none}
+#stick{position:absolute;left:36px;top:36px;width:44px;height:44px;border-radius:50%;background:#f5c12ecc;border:2px solid #fff;pointer-events:none}
+#interact{position:absolute;right:24px;bottom:28px;width:76px;height:76px;border-radius:50%;background:#1f8a4cee;border:2px solid #f5c12e;font-weight:800;pointer-events:auto;touch-action:manipulation}
+@media(max-width:760px){
+ #shop{width:min(56vw,250px);top:auto;bottom:150px;max-height:36vh;left:7px;font-size:11px}
+ .stat{min-width:0;padding:5px 8px}.stat strong{font-size:13px}.brand{min-width:0}
+ #hint{display:none}#mobile{display:block}
+}
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<div id="hud">
+ <div class="box stat brand"><small>Fan-Made Reggae Shop</small><strong>ROOTZ · MERCH SHOP</strong></div>
+ <div class="box stat"><small>Kasse</small><strong id="cash">400 €</strong></div>
+ <div class="box stat"><small>Tag</small><strong id="day">1 · 120 s</strong></div>
+ <div class="box stat"><small>Verkäufe heute</small><strong id="sold">0</strong></div>
+ <div class="box stat"><small>Fans im Laden</small><strong id="fans">0</strong></div>
+ <div class="box stat"><small>Ruf</small><strong id="rep">1</strong></div>
+ <div class="box stat"><small>Personal</small><strong id="staffStat">0</strong></div>
+ <div class="box stat"><small>Bestand</small><strong id="stock"></strong></div>
+</div>
+<div id="event"></div>
+
+<section id="shop" class="box">
+ <h2>Dein ROOTZ-Shop</h2>
+ <p>Preise beeinflussen, wie viele Fans kaufen. Nachbestellungen brauchen 12 Sekunden Lieferzeit.</p>
+ <div id="rows"></div>
+ <hr>
+ <button id="hire" class="full green"><b>Mitarbeiter einstellen · 200 €</b></button>
+ <button id="fire" class="full"><b>Mitarbeiter entlassen</b></button>
+ <button id="buy-shelf" class="full gold"><b>Regal kaufen · 100 €</b></button>
+ <button id="upgrade" class="full"><b>Shop dekorieren · 300 €</b> (Ruf +1)</button>
+ <hr>
+ <button id="save">Speichern</button>
+ <button id="reset" class="red">Neustart</button>
+ <p><b>Mitarbeiter</b> bedienen Fans und kosten 30 € Lohn pro Minute. Tagesmiete: 60 €.</p>
+</section>
+
+<div id="toast"></div>
+<div id="hint">WASD / Pfeile · Shift: rennen · E: Ware nachholen</div>
+<div id="mobile">
+ <div id="stickBase"><div id="stick"></div></div>
+ <button id="interact">E</button>
+</div>
+
+<div id="report"><div class="box">
+ <h1 id="repTitle">Tagesabschluss</h1>
+ <p id="repText"></p>
+ <button id="nextDay" class="gold" style="font-weight:700;padding:10px 18px">Nächster Tag</button>
+</div></div>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const canvas=$('world'),ctx=canvas.getContext('2d');
+let W,H,dpr;
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+
+/* ---------- Konstanten ---------- */
+const RED='#d6342b',GOLD='#f5c12e',GREEN='#1f8a4c';
+const PRODUCTS={
+ shirts:{name:'Lion-Shirt',base:35,cost:90,qty:5,label:'LION-SHIRTS',color:'#161616'},
+ hoodies:{name:'Hoodie',base:65,cost:160,qty:3,label:'HOODIES',color:GREEN},
+ vinyl:{name:'Reggae-Vinyl',base:40,cost:120,qty:4,label:'VINYL',color:'#6a3a8a'},
+ leaf:{name:'Leaf-Sticker',base:18,cost:60,qty:8,label:'STICKER',color:GOLD}
+};
+const FIX=[
+ {id:'shirts',x:-205,y:-35,w:110,h:75},
+ {id:'hoodies',x:205,y:-35,w:110,h:75},
+ {id:'vinyl',x:0,y:-205,w:150,h:80},
+ {id:'leaf',x:350,y:180,w:110,h:75},
+ {id:'till',x:0,y:70,w:135,h:60}
+];
+const EVENTS=[
+ {name:'🎶 Dancehall-Abend: doppelt so viele Fans',fan:1.8},
+ {name:'🌧 Regenschauer: weniger Laufkundschaft',fan:.55},
+ {name:'☀ Ruhiger Tag im Viertel',fan:1}
+];
+const DAY_LEN=120,RENT=60,WAGE=30,HIRE=200,MAX_STAFF=3,ORDER_TIME=12,DAY_GOAL=150;
+const SKINS=['#f1c9a5','#d9a679','#a8704a','#7a4b2e'];
+const SHIRT_COLS=[RED,GOLD,GREEN,'#e8e2d0','#3b5b8a','#8a3a6a'];
+const DEFAULT={cash:400,stock:{shirts:10,hoodies:8,vinyl:8,leaf:0},price:{shirts:35,hoodies:65,vinyl:40,leaf:18},
+ shelves:[],sold:0,rep:1,decorated:false,staff:0,day:1,dayLeft:DAY_LEN,dayRevenue:0,event:0,orders:[]};
+const SAVE_KEY='rootzMerchShop_v5';
+let state=load();
+let lastSavedAt=0,pendingSave=0;
+function persistState(){
+ clearTimeout(pendingSave);pendingSave=0;
+ try{localStorage.setItem(SAVE_KEY,JSON.stringify(state));lastSavedAt=Date.now()}catch(e){}
+}
+function schedulePersist(){
+ const elapsed=Date.now()-lastSavedAt;
+ if(elapsed>=750){persistState();return}
+ if(!pendingSave)pendingSave=setTimeout(persistState,750-elapsed);
+}
+addEventListener('pagehide',persistState);
+function load(){
+ try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&typeof s.cash==='number')return{...structuredClone(DEFAULT),...s,stock:{...DEFAULT.stock,...s.stock},price:{...DEFAULT.price,...s.price}}}catch(e){}
+ return structuredClone(DEFAULT);
+}
+let reportOpen=false,placementMode=false,spawnT=0,wageT=0;
+const customers=[],staffT=[];
+for(let i=0;i<state.staff;i++)staffT.push(0);
+const player={x:0,y:190};
+const camera={x:0,y:0};
+const keys={},touch={x:0,y:0};
+const STAFF_SLOTS=[[-95,40],[-10,135],[75,40]];
+
+/* ---------- Eingabe ---------- */
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e')interact()});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+const stickBase=$('stickBase'),stick=$('stick');let stickPointer=null;
+function moveStick(e){const r=stickBase.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const len=Math.hypot(dx,dy),m=36;if(len>m){dx=dx/len*m;dy=dy/len*m}touch.x=dx/m;touch.y=dy/m;stick.style.transform=`translate(${dx}px,${dy}px)`}
+stickBase.addEventListener('pointerdown',e=>{stickPointer=e.pointerId;stickBase.setPointerCapture(e.pointerId);moveStick(e);e.preventDefault()});
+stickBase.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer)moveStick(e)});
+const stickEnd=e=>{if(e.pointerId!==stickPointer)return;stickPointer=null;touch.x=touch.y=0;stick.style.transform='translate(0,0)'};
+stickBase.addEventListener('pointerup',stickEnd);stickBase.addEventListener('pointercancel',stickEnd);
+$('interact').addEventListener('pointerdown',e=>{e.preventDefault();interact()});
+
+/* ---------- UI ---------- */
+function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200)}
+
+for(const id in PRODUCTS){
+ const p=PRODUCTS[id],row=document.createElement('div');
+ row.className='row';
+ row.innerHTML=`<div><b>${p.name}</b><small>Lager: <span id="s-${id}"></span> · Lieferung ${p.qty} Stk · ${p.cost} €</small>
+  <div class="price"><button id="pm-${id}">−5</button><span id="pr-${id}"></span><button id="pp-${id}">+5</button></div></div>
+  <button id="buy-${id}" class="gold">Bestellen</button>`;
+ $('rows').appendChild(row);
+ $('buy-'+id).onclick=()=>order(id);
+ $('pm-'+id).onclick=()=>setPrice(id,-5);
+ $('pp-'+id).onclick=()=>setPrice(id,5);
+}
+function setPrice(id,d){const v=Math.max(5,Math.min(200,state.price[id]+d));state.price[id]=v;updateUI()}
+
+function order(id){
+ const p=PRODUCTS[id];
+ if(state.cash<p.cost){toast('Nicht genug Geld in der Kasse!');return}
+ state.cash-=p.cost;
+ state.orders.push({id,qty:p.qty,t:ORDER_TIME});
+ toast(`${p.name} bestellt – Lieferung in ${ORDER_TIME} s.`);
+ updateUI();
+}
+
+function updateUI(){
+ $('cash').textContent=Math.floor(state.cash).toLocaleString('de-DE')+' €';
+ $('cash').className=state.cash<0?'neg':'';
+ $('day').textContent=`${state.day} · ${Math.ceil(state.dayLeft)} s`;
+ $('sold').textContent=state.sold;
+ $('fans').textContent=customers.length;
+ $('rep').textContent=state.rep;
+ $('staffStat').textContent=`${state.staff} · ${state.staff*WAGE} €/Min`;
+ $('stock').textContent=Object.keys(PRODUCTS).map(k=>state.stock[k]).join(' · ');
+ for(const id in PRODUCTS){
+  $('s-'+id).textContent=state.stock[id];
+  $('pr-'+id).textContent=state.price[id]+' €';
+  $('buy-'+id).disabled=state.cash<PRODUCTS[id].cost;
+ }
+ $('hire').disabled=state.cash<HIRE||state.staff>=MAX_STAFF;
+ $('fire').disabled=state.staff<=0;
+ $('buy-shelf').disabled=state.cash<100;
+ $('upgrade').disabled=state.cash<300||state.decorated;
+ $('event').textContent=EVENTS[state.event].name;
+ schedulePersist();
+}
+
+$('hire').onclick=()=>{if(state.staff>=MAX_STAFF)return;if(state.cash<HIRE){toast('Nicht genug Geld.');return}state.cash-=HIRE;state.staff++;staffT.push(0);toast('Neue Kraft steht an der Kasse!');updateUI()};
+$('fire').onclick=()=>{if(state.staff<=0)return;state.staff--;staffT.pop();toast('Mitarbeiter entlassen.');updateUI()};
+$('buy-shelf').onclick=()=>{if(state.cash<100){toast('Nicht genug Geld.');return}state.cash-=100;placementMode=true;toast('Im Laden auf eine freie Stelle tippen.');updateUI()};
+$('upgrade').onclick=()=>{if(state.cash<300||state.decorated)return;state.cash-=300;state.rep++;state.decorated=true;toast('Der Shop glänzt! Mehr Fans kommen.');updateUI()};
+$('#save').onclick=()=>{persistState();toast('Gespeichert.')};
+$('reset').onclick=()=>{if(!confirm('Shop wirklich zurücksetzen?'))return;state=structuredClone(DEFAULT);customers.length=0;staffT.length=0;localStorage.removeItem(SAVE_KEY);placementMode=false;reportOpen=false;$('report').classList.remove('show');toast('Neuer Shop gestartet.');updateUI()};
+
+/* ---------- Tagesablauf ---------- */
+function endDay(){
+ reportOpen=true;
+ const goal=state.dayRevenue>=DAY_GOAL;
+ if(goal)state.cash+=80;
+ $('repTitle').textContent=`Tag ${state.day} abgeschlossen`;
+ $('repText').innerHTML=`Umsatz: <b>${state.dayRevenue} €</b> · Verkäufe: <b>${state.sold}</b><br>Ziel (${DAY_GOAL} €): ${goal?'<b style="color:'+GOLD+'">erreicht, +80 € Bonus!</b>':'verfehlt'}<br>Morgen: Miete ${RENT} €`;
+ $('report').classList.add('show');
+}
+$('nextDay').onclick=()=>{
+ state.day++;state.cash-=RENT;state.dayLeft=DAY_LEN;state.dayRevenue=0;state.sold=0;
+ state.event=Math.floor(Math.random()*EVENTS.length);
+ reportOpen=false;$('report').classList.remove('show');
+ toast(`Tag ${state.day}: ${EVENTS[state.event].name}`);
+ updateUI();
+};
+
+/* ---------- Spiel ---------- */
+function interact(){
+ let near=null,best=1e9;
+ for(const f of FIX){const d=Math.hypot(player.x-f.x,player.y-f.y);if(d<best){best=d;near=f}}
+ if(best>125){toast('Geh an eine Warenfläche oder die Kasse.');return}
+ if(near.id==='till'){toast('Kasse: Verkäufe werden automatisch abgerechnet.');return}
+ // E holt eine Lieferung direkt ab, wenn eine läuft; sonst nichts
+ const idx=state.orders.findIndex(o=>o.id===near.id);
+ if(idx>=0){const o=state.orders[idx];state.orders.splice(idx,1);state.stock[o.id]+=o.qty;toast(`${o.qty}× ${PRODUCTS[o.id].name} sofort eingeräumt.`);updateUI()}
+ else toast(`Keine Lieferung für ${PRODUCTS[near.id].name} unterwegs.`);
+}
+
+function spawnCustomer(){
+ const cap=7+state.shelves.length;
+ if(customers.length>=cap)return;
+ const ids=Object.keys(PRODUCTS);
+ customers.push({
+  x:Math.random()<.5?-330:330,y:-310,tx:(Math.random()-.5)*80,ty:120,
+  phase:'walk',wait:0,
+  look:{shirt:SHIRT_COLS[rnd(SHIRT_COLS.length)],pants:['#2c3440','#3a3f4a','#4b3d2e'][rnd(3)],skin:SKINS[rnd(SKINS.length)],
+   hair:'#1c1c1c',hat:Math.random()<.5?[RED,GOLD,GREEN]:null,dreads:Math.random()<.4},
+  want:ids[rnd(ids.length)]
+ });
+}
+function rnd(n){return Math.floor(Math.random()*n)}
+
+function buy(c){
+ const p=PRODUCTS[c.want],price=state.price[c.want],ratio=price/p.base;
+ const accept=ratio<=1?1:Math.max(0,1-(ratio-1)*1.5);
+ if(Math.random()>accept){toast(`Fan findet ${p.name} zu teuer und geht.`);updateUI();return}
+ if(state.stock[c.want]<=0){toast(`${p.name} ausverkauft – ein Fan geht enttäuscht.`);updateUI();return}
+ state.stock[c.want]--;state.cash+=price;state.sold++;state.dayRevenue+=price;
+ // Gute Preise bringen Ruf
+ if(ratio<=1&&Math.random()<.15){state.rep=Math.min(10,state.rep+1);toast('Fair-Preis-Bonus: Ruf +1!')}
+ else toast(`Verkauft: ${p.name} für ${price} €`);
+ updateUI();
+}
+
+function update(dt){
+ let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0)+touch.x;
+ let dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)+touch.y;
+ if(dx||dy){const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const sp=(keys.shift?250:165)*dt;player.x=Math.max(-470,Math.min(470,player.x+dx*sp));player.y=Math.max(-370,Math.min(370,player.y+dy*sp))}
+ camera.x+=(player.x-camera.x)*Math.min(1,dt*5);camera.y+=(player.y-camera.y)*Math.min(1,dt*5);
+
+ // Tag läuft nur, solange der Shop offen ist
+ if(!reportOpen){
+  if(state.dayLeft>0){
+   state.dayLeft=Math.max(0,state.dayLeft-dt);
+   spawnT+=dt;
+   const mul=EVENTS[state.event].fan;
+   if(state.dayLeft>0&&spawnT>Math.max(2.5,8-state.rep*.6)/mul){spawnT=0;spawnCustomer()}
+  }else if(customers.length===0){endDay()}
+ }
+
+ // Lieferungen
+ for(let i=state.orders.length-1;i>=0;i--){
+  const o=state.orders[i];o.t-=dt;
+  if(o.t<=0){state.stock[o.id]+=o.qty;state.orders.splice(i,1);toast(`${o.qty}× ${PRODUCTS[o.id].name} geliefert.`);updateUI()}
+ }
+
+ // Löhne jede Minute
+ wageT+=dt;
+ if(wageT>=60){wageT=0;if(state.staff>0){const s=state.staff*WAGE;state.cash-=s;toast(`Löhne gezahlt: ${s} €`)}}
+
+ // Personal bedient
+ for(let i=0;i<state.staff;i++){
+  staffT[i]+=dt;
+  if(staffT[i]>=3){
+   const idx=customers.findIndex(c=>c.phase==='wait');
+   if(idx>=0){staffT[i]=0;const c=customers[idx];customers.splice(idx,1);buy(c)}else staffT[i]=3;
+  }
+ }
+
+ for(let i=customers.length-1;i>=0;i--){
+  const c=customers[i];
+  if(c.phase==='walk'){const ddx=c.tx-c.x,ddy=c.ty-c.y,l=Math.hypot(ddx,ddy);if(l>4){c.x+=ddx/l*65*dt;c.y+=ddy/l*65*dt}else{c.phase='wait';c.wait=2+Math.random()*3}}
+  else{c.wait-=dt;if(c.wait<=0){customers.splice(i,1);buy(c)}}
+ }
+}
+
+/* ---------- Zeichnen ---------- */
+function shade(hex,a){const n=parseInt(hex.slice(1),16);const c=v=>Math.max(0,Math.min(255,v+a));return `rgb(${c(n>>16)},${c((n>>8)&255)},${c(n&255)})`}
+function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function shadow(x,y,rx,ry,a){ctx.save();ctx.translate(x,y);ctx.scale(1,ry/rx);const g=ctx.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`rgba(0,0,0,${a})`);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,rx,0,Math.PI*2);ctx.fill();ctx.restore()}
+
+// Hintergrund: Holz-Dielen mit Teppich in Rasta-Farben, Wände in Grün/Gold, Palmen
+const BG=(()=>{
+ const c=document.createElement('canvas');c.width=1200;c.height=960;
+ const g=c.getContext('2d');g.translate(600,480);
+ g.fillStyle='#1a1410';g.fillRect(-600,-480,1200,960);
+ // Fliesen im Schachbrett, leicht unregelmäßig
+ let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;
+ for(let i=0;i<13;i++)for(let j=0;j<10;j++){
+  const t=r()*10;
+  g.fillStyle=(i+j)%2?`rgb(${92+t|0},${58+t|0},${34+t*.5|0})`:`rgb(${70+t|0},${44+t|0},${26+t*.4|0})`;
+  g.fillRect(-520+i*80,-420+j*80,80,80);
+  g.fillStyle='rgba(0,0,0,.35)';g.fillRect(-520+i*80,-420+j*80,80,1);g.fillRect(-520+i*80,-420+j*80,1,80);
+ }
+ // Rasta-Teppich (Mitte, Richtung Kasse)
+ const rug=(x,w,y,h)=>{g.fillStyle='#1d1d1d';g.fillRect(x-4,y,w+8,h)};
+ rug(-120,240,-400,800);
+ g.fillStyle=GREEN;g.fillRect(-110,-390,80,780);
+ g.fillStyle=GOLD;g.fillRect(-30,-390,60,780);
+ g.fillStyle=RED;g.fillRect(30,-390,80,780);
+ g.fillStyle='rgba(255,255,255,.15)';for(let y=-380;y<380;y+=40){g.fillRect(-110,y,220,2)}
+ // Wände
+ const wall=(x,y,w,h)=>{const gr=g.createLinearGradient(x,y,x+w,y+h);gr.addColorStop(0,'#2b5a3a');gr.addColorStop(1,'#173424');g.fillStyle=gr;g.fillRect(x,y,w,h)};
+ wall(-520,-420,1040,22);wall(-520,-420,22,840);wall(498,-420,22,840);wall(-520,398,1040,22);
+ // Rasta-Streifen oben an der Rückwand
+ const bands=[RED,GOLD,GREEN];
+ bands.forEach((col,i)=>{g.fillStyle=col;g.fillRect(-500,-398+i*7,1000,7)});
+ g.fillStyle='#0f1a12';g.fillRect(-500,-377,1000,33);
+ g.fillStyle='#e6d8b0';g.fillRect(-500,-344,1000,5);
+ g.fillStyle='#3a2a1c';g.fillRect(-500,365,1000,30);
+ // Schriftzug
+ g.textAlign='center';
+ g.shadowColor='#000';g.shadowBlur=8;
+ g.lineWidth=6;g.strokeStyle=RED;g.font='bold 36px Georgia, serif';g.strokeText('ROOTZ',0,-352);
+ g.fillStyle=GOLD;g.fillText('ROOTZ',0,-352);g.shadowBlur=0;
+ g.fillStyle='#e6d8b0';g.font='bold 11px system-ui';g.fillText('ONE LOVE · FAN-MADE MERCH · EST. 2026',0,-330);
+ g.fillStyle=GOLD;g.font='bold 12px system-ui';g.fillText('MERCH · VINYL · ROOTS · CULTURE',0,384);
+ // Palmenblätter in den Ecken
+ const palm=(x,y,ang)=>{g.save();g.translate(x,y);g.rotate(ang);for(let k=0;k<7;k++){g.save();g.rotate(k*0.5-1.5);g.fillStyle=k%2?'#1f5e35':'#2b7a46';g.beginPath();g.ellipse(0,-34,7,34,0,0,Math.PI*2);g.fill();g.restore()}g.restore()};
+ palm(-470,-340,.3);palm(470,-340,-.3);palm(-470,340,2.8);palm(470,340,-2.8);
+ // Schaufenster
+ g.fillStyle='#9fd0e833';g.fillRect(-485,-300,80,210);g.fillRect(405,-300,80,210);
+ g.strokeStyle='#e6d8b0';g.lineWidth=4;g.strokeRect(-485,-300,80,210);g.strokeRect(405,-300,80,210);
+ return c;
+})();
+
+function lionEmblem(){
+ // Vereinfachter Löwenkopf für das Lion-Shirt (Schwarz-Weiß)
+ ctx.fillStyle='#f4f1e6';
+ for(let k=0;k<10;k++){const a=k/10*Math.PI*2;ctx.beginPath();ctx.moveTo(Math.cos(a)*9,-14+Math.sin(a)*9);ctx.lineTo(Math.cos(a+.2)*13,-14+Math.sin(a+.2)*13);ctx.lineTo(Math.cos(a+.4)*9,-14+Math.sin(a+.4)*9);ctx.fill()}
+ ctx.beginPath();ctx.arc(0,-14,7,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#111';ctx.fillRect(-3.5,-17,2,2);ctx.fillRect(1.5,-17,2,2);ctx.fillRect(-2,-11,4,1.5);
+}
+
+function drawPerson(x,y,o,bob=0,isPlayer=false){
+ ctx.save();ctx.translate(x,y+bob);
+ shadow(2,14,17,6,.5);
+ // Dreads hinter dem Kopf
+ if(o.dreads||isPlayer){ctx.strokeStyle=o.dreadCol||'#2a1c12';ctx.lineWidth=3;ctx.lineCap='round';for(let i=-3;i<=3;i++){ctx.beginPath();ctx.moveTo(i*2.2,-46);ctx.quadraticCurveTo(i*3.4,-34,i*3,-20);ctx.stroke()}ctx.lineCap='butt'}
+ // Beine
+ ctx.fillStyle=o.pants;ctx.fillRect(-9,2,7,12);ctx.fillRect(2,2,7,12);
+ ctx.fillStyle='#17191d';ctx.fillRect(-10,12,8,4);ctx.fillRect(2,12,8,4);
+ // Torso
+ const tg=ctx.createLinearGradient(-12,0,12,0);
+ tg.addColorStop(0,shade(o.shirt,-35));tg.addColorStop(.45,o.shirt);tg.addColorStop(1,shade(o.shirt,-50));
+ ctx.fillStyle=tg;rrect(-12,-26,24,30,6);ctx.fill();
+ if(isPlayer)lionEmblem();
+ // Arme
+ ctx.fillStyle=shade(o.shirt,-12);ctx.fillRect(-16,-22,5,20);ctx.fillRect(11,-22,5,20);
+ ctx.fillStyle=o.skin;ctx.fillRect(-16,-3,5,4);ctx.fillRect(11,-3,5,4);
+ if(o.apron){const ag=ctx.createLinearGradient(0,-14,0,8);ag.addColorStop(0,o.apron);ag.addColorStop(1,shade(o.apron,-30));ctx.fillStyle=ag;rrect(-9,-14,18,22,2);ctx.fill();ctx.fillStyle=GOLD;ctx.fillRect(-4,-10,8,4)}
+ // Hals & Kopf
+ ctx.fillStyle=shade(o.skin,-18);ctx.fillRect(-3,-31,6,5);
+ const hg=ctx.createRadialGradient(-3,-44,2,0,-41,12);hg.addColorStop(0,shade(o.skin,18));hg.addColorStop(1,shade(o.skin,-12));
+ ctx.fillStyle=hg;ctx.beginPath();ctx.ellipse(0,-41,10.5,12,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#22181a';ctx.fillRect(-5,-42,2,2);ctx.fillRect(3,-42,2,2);
+ // Mütze in Rasta-Streifen oder Haare
+ if(o.hat){ctx.beginPath();ctx.arc(0,-44,11.5,Math.PI*1.02,Math.PI*1.98);ctx.fillStyle=o.hat[0];ctx.fill();
+  ctx.fillStyle=o.hat[1];ctx.fillRect(-11.5,-42,23,3);ctx.fillStyle=o.hat[2];ctx.fillRect(-11.5,-38,23,2);
+  ctx.fillStyle=o.hat[0];ctx.fillRect(-11,-36,22,3)}
+ else{ctx.fillStyle=o.hair;ctx.beginPath();ctx.arc(0,-44,11.5,Math.PI*1.02,Math.PI*1.98);ctx.fill();ctx.fillRect(-11.5,-44,4,10);ctx.fillRect(7.5,-44,4,10)}
+ ctx.restore();
+}
+const PLAYER={shirt:'#121212',pants:'#243044',skin:'#c58a5e',hair:'#1f1a17',hat:[RED,GOLD,GREEN],dreads:true,dreadCol:'#2a1c12'};
+const STAFF_LOOK=[0,1,2].map(i=>({shirt:GREEN,apron:GOLD,pants:'#2e3a46',skin:SKINS[i+1],hair:'#1c1c1c'}));
+
+function drawFixture(f){
+ const p=PRODUCTS[f.id];const x=f.x-f.w/2,y=f.y-f.h/2;
+ shadow(f.x+4,y+f.h+6,f.w*.62,9,.45);
+ const base=p?p.color:'#4a2f1c';
+ const tg=ctx.createLinearGradient(0,y,0,y+f.h);tg.addColorStop(0,shade(base,35));tg.addColorStop(.25,base);tg.addColorStop(1,shade(base,-45));
+ ctx.fillStyle=tg;rrect(x,y,f.w,f.h,4);ctx.fill();
+ ctx.strokeStyle=GOLD;ctx.lineWidth=1.5;ctx.strokeRect(x+.5,y+.5,f.w-1,f.h-1);
+ ctx.fillStyle='#14191f';rrect(f.x-f.w*.38,y+6,f.w*.76,16,3);ctx.fill();
+ ctx.fillStyle='#f5ecd2';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText(p?p.label:'KASSE',f.x,y+18);
+ if(p){
+  const n=Math.min(state.stock[f.id],10),cw=(f.w-18)/5;
+  for(let i=0;i<n;i++){const col=i%5,row=Math.floor(i/5);const ix=x+9+col*cw,iy=y+f.h-16-row*12;ctx.fillStyle=shade(p.color,i%2?25:5);ctx.fillRect(ix,iy,cw-3,10);ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(ix,iy,cw-3,1)}
+ }else{
+  ctx.fillStyle='#1d262f';rrect(f.x-24,f.y-10,48,24,3);ctx.fill();
+  ctx.fillStyle=GREEN;ctx.fillRect(f.x-16,f.y-7,32,12);
+ }
+}
+function drawShelf(s){
+ shadow(s.x+3,s.y+26,50,8,.45);
+ const wg=ctx.createLinearGradient(0,s.y-24,0,s.y+24);wg.addColorStop(0,'#8a6440');wg.addColorStop(1,'#4e3520');
+ ctx.fillStyle=wg;ctx.fillRect(s.x-50,s.y-24,100,48);
+ ctx.fillStyle=GOLD;ctx.fillRect(s.x-50,s.y-24,100,2);
+ [RED,GOLD,GREEN,'#161616'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(s.x-42+i*22,s.y-14,16,14)});
+ ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('REGAL',s.x,s.y+18);
+}
+
+function draw(){
+ ctx.fillStyle='#0d120d';ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.translate(W/2-camera.x,H/2-camera.y);
+ ctx.drawImage(BG,-600,-480);
+ FIX.forEach(drawFixture);
+ state.shelves.forEach(drawShelf);
+ for(let i=0;i<state.staff;i++){const [sx,sy]=STAFF_SLOTS[i];drawPerson(sx,sy,STAFF_LOOK[i],Math.sin(performance.now()/400+i)*.6)}
+ customers.forEach(c=>{
+  drawPerson(c.x,c.y,c.look);
+  ctx.fillStyle='rgba(10,14,10,.85)';rrect(c.x-26,c.y-72,52,15,4);ctx.fill();
+  ctx.fillStyle=GOLD;ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText(PRODUCTS[c.want].label,c.x,c.y-61);
+ });
+ drawPerson(player.x,player.y,PLAYER,0,true);
+ // warmes Licht
+ ctx.save();ctx.globalCompositeOperation='overlay';
+ for(const [lx,ly] of [[-300,-250],[300,-250],[0,0],[-300,160],[300,160]]){const g=ctx.createRadialGradient(lx,ly,10,lx,ly,360);g.addColorStop(0,'rgba(255,220,150,.65)');g.addColorStop(1,'rgba(255,220,150,0)');ctx.fillStyle=g;ctx.fillRect(lx-360,ly-360,720,720)}
+ ctx.restore();
+ ctx.restore();
+ const vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);
+ vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+
+canvas.addEventListener('pointerdown',e=>{
+ if(!placementMode)return;
+ const wx=e.clientX-W/2+camera.x,wy=e.clientY-H/2+camera.y;
+ if(Math.abs(wx)>440||Math.abs(wy)>330){toast('Bitte innerhalb des Ladens platzieren.');return}
+ for(const f of FIX)if(Math.hypot(wx-f.x,wy-f.y)<90){toast('Hier ist schon eine Warenfläche.');return}
+ for(const s of state.shelves)if(Math.hypot(wx-s.x,wy-s.y)<110){toast('Zu dicht an einem Regal.');return}
+ state.shelves.push({x:wx,y:wy});placementMode=false;toast('Regal platziert!');updateUI();
+});
+
+let last=performance.now(),uiT=0;
+function frame(now){
+ const dt=Math.min((now-last)/1000,.05);last=now;
+ update(dt);
+ uiT+=dt;if(uiT>.3){uiT=0;updateUI()}
+ draw();
+ requestAnimationFrame(frame);
+}
+updateUI();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

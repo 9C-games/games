@@ -1,0 +1,1584 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Villa Albtraum – Bibliothek & Botanischer Garten</title>
+<style>
+:root{--ink:#f5f1e8;--gold:#ffc96b;--blue:#1d78a8}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111722;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+#wrap{height:100%;display:grid;place-items:center;background:radial-gradient(ellipse at center,#273447,#0d1119)}
+canvas{width:min(100vw,1200px);height:auto;max-height:100vh;aspect-ratio:16/9;display:block;background:#1b2430;box-shadow:0 15px 60px #0009;touch-action:none;image-rendering:pixelated;filter:contrast(1.08) saturate(1.16)}
+#overlay{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 25%,#28364acc,#070b14f2 72%),linear-gradient(#07101bdc,#101927ed);padding:12px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.panel{width:min(760px,96vw);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+.panel{width:min(760px,96vw);max-height:94vh;overflow:auto;background:linear-gradient(145deg,#202b3a,#111724 62%,#1b2031);border:3px solid #806344;border-radius:5px;padding:clamp(18px,4vw,34px);box-shadow:0 0 0 4px #1a1720,0 0 0 7px #b18a50,0 20px 70px #000d;text-align:center;image-rendering:pixelated;position:relative}
+.panel:before{content:"";position:absolute;inset:7px;border:1px solid #d6b36c55;pointer-events:none}
+#panel h1{font-family:Georgia,serif;color:#f6d38a;text-shadow:3px 3px 0 #4b2e39,5px 5px 0 #080c16;letter-spacing:3px}
+
+.pixel-scene{height:160px;max-width:640px;margin:0 auto 8px;border:3px solid #806344;box-shadow:inset 0 0 0 3px #111827,0 5px 18px #0009;background:#101b32;overflow:hidden}
+.pixel-scene svg{width:100%;height:100%;display:block;image-rendering:pixelated}
+#panel h1{font-family:Georgia,serif;font-size:clamp(30px,6vw,52px);letter-spacing:4px;color:#ffe0a0;text-shadow:3px 3px 0 #57394a,6px 6px 0 #080c16}
+
+#panel .sub{color:#c9d6e3;text-shadow:1px 1px #080c16}
+#panel .char{border-radius:4px;background:linear-gradient(180deg,#263448,#151e2d);border:2px solid #796447;box-shadow:inset 0 0 0 2px #0b111c}
+#panel .char.selected{border-color:#ffd477;background:linear-gradient(180deg,#4a3c37,#25263a);box-shadow:0 0 0 2px #ffd47755,0 0 18px #f3bd5a55}
+#panel button#start{border-radius:4px;border:2px solid #ffdf9a;box-shadow:0 4px 0 #6b4324,0 0 18px #f0b64b44;letter-spacing:1px}
+
+h1{font-size:clamp(28px,5vw,48px);line-height:1;margin:5px 0 10px;letter-spacing:1px}
+.sub{color:#c7d1dc;margin:0 auto 20px;max-width:590px}
+.cards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.char{width:min(230px,44vw);min-width:138px;border:2px solid #ffffff22;border-radius:16px;background:#ffffff0a;padding:12px;cursor:pointer;color:inherit;font:inherit}
+.char.selected{border-color:var(--gold);background:#ffc96b18;box-shadow:0 0 0 2px #ffc96b22}
+.avatar{height:132px;width:100%;display:grid;place-items:center;font-size:0;filter:drop-shadow(0 7px 0 #070b13) drop-shadow(0 0 10px #83c9ff33);background:radial-gradient(ellipse at 50% 75%,#7e91a522,transparent 65%)}
+.avatar svg{height:124px;width:124px;image-rendering:pixelated;shape-rendering:crispEdges}
+.char b{color:#f6d38a;text-shadow:2px 2px #111}
+
+.char b{display:block;font-size:18px}.char small{color:#c5cfda}
+button{border:0;border-radius:12px;background:linear-gradient(180deg,#ffd98c,#e9a93f);color:#24202a;padding:13px 28px;font-weight:900;font-size:17px;cursor:pointer;box-shadow:0 4px 0 #9d692b}
+button:active{transform:translateY(2px);box-shadow:0 2px 0 #9d692b}
+.hint{font-size:13px;color:#aebdcb;line-height:1.6;margin-top:16px}
+#hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:min(1000px,96vw);display:none;justify-content:center;align-items:stretch;gap:10px;pointer-events:none}
+.hud-card{min-width:112px;background:linear-gradient(145deg,#101c2beF,#08121feF);border:1px solid #dcefff38;border-radius:14px;padding:8px 15px;box-shadow:0 5px 18px #0007;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.hud-card small{font-size:10px;letter-spacing:1.5px;color:#9fb6c9;font-weight:900}
+.hud-card strong{font-size:19px;line-height:1.2;color:#f6fbff;text-shadow:0 1px 3px #000}
+#lifeDisplay{color:#ff6378;letter-spacing:1px;font-size:18px}
+#scoreDisplay{color:#ffd66c}
+#throwDisplay{color:#8ce3ff;font-size:15px}
+#zoneDisplay{font-size:14px}
+@media(max-width:650px){.panel{padding:16px 12px}.avatar{height:112px}.avatar svg{height:108px;width:108px}.char{padding:9px 7px}.char small{font-size:11px;line-height:1.35;display:block}#hud{top:6px;gap:4px;width:99vw}.hud-card{min-width:0;flex:1;padding:5px 4px;border-radius:9px}.hud-card small{font-size:7px;letter-spacing:.6px}.hud-card strong{font-size:12px}#lifeDisplay{font-size:14px;letter-spacing:0}#throwDisplay,#zoneDisplay{font-size:10px}}
+#mobile{position:fixed;bottom:16px;left:0;right:0;display:none;justify-content:space-between;padding:0 18px;pointer-events:none}
+.pad{display:flex;gap:10px}.touch{pointer-events:auto;width:58px;height:58px;border-radius:16px;background:#17283bc9;border:1px solid #ffffff55;color:white;font-size:23px;font-weight:bold;box-shadow:0 4px 15px #0006;touch-action:none}
+@media(pointer:coarse){#mobile{display:flex}}
+
+.skin-modal{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:14px;background:#070b14ed;backdrop-filter:blur(7px)}
+.skin-dialog{width:min(620px,94vw);max-height:88dvh;overflow:auto;padding:22px;border:2px solid #a98a5c;border-radius:20px;background:linear-gradient(145deg,#263243,#101722 72%);box-shadow:0 24px 80px #000c;text-align:center}
+.skin-dialog h2{margin:7px 0;color:#f6d99f;font-size:clamp(22px,4vw,32px)}
+.skin-tabs{display:flex;gap:8px;justify-content:center;margin:14px 0}
+.skin-tabs button{flex:1;max-width:180px;padding:11px;border:1px solid #64778b;border-radius:10px;background:#1c2b3b;color:#f5f1e8;font-weight:900}
+.skin-tabs button.selected{border-color:#f1ca7e;background:#59452e;color:#fff2d1}
+.skin-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+.skin-option{min-width:0;padding:10px 4px;border:1px solid #596b7e;border-radius:12px;background:#152232;color:#f5f1e8;cursor:pointer}
+.skin-option.selected{border:2px solid #ffd47d;background:#3c3240;box-shadow:0 0 18px #f3c66a44}
+.skin-swatch{display:block;width:38px;height:45px;margin:0 auto 7px;border-radius:8px;border:1px solid #ffffff66;clip-path:polygon(30% 0,70% 0,78% 32%,100% 42%,88% 100%,12% 100%,0 42%,22% 32%)}
+.skin-option small{display:block;font-size:clamp(9px,2vw,12px);font-weight:800;line-height:1.2}
+.skin-selection-name{min-height:22px;color:#f4d28f;font-weight:800;margin-bottom:8px}
+@media(max-width:520px){.skin-dialog{padding:14px}.skin-grid{gap:5px}.skin-option{padding:8px 2px}}
+
+.weapon-select{margin:14px auto 12px;max-width:520px}
+.weapon-heading{font-size:11px;font-weight:900;letter-spacing:2px;color:#e6c78d;margin-bottom:8px}
+.weapon-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.weapon-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border:1px solid #607184;border-radius:13px;background:#172536;color:#f5f0e8;cursor:pointer}
+.weapon-option>span{font-size:28px}.weapon-option b{font-size:13px}.weapon-option small{font-size:10px;color:#b8c6d2}
+.weapon-option.selected{border:2px solid #f0cb7b;background:linear-gradient(145deg,#4b3b2d,#202b3c);box-shadow:0 0 15px #f0cb7b33}
+</style>
+</head>
+<body><div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
+<div id="hud">
+ <div class="hud-card"><small>LEBEN</small><strong id="lifeDisplay">♥ ♥ ♥</strong></div>
+ <div class="hud-card"><small>STERNE</small><strong id="scoreDisplay">0</strong></div>\n <div class="hud-card"><small>REKORD</small><strong id="highScoreDisplay">0</strong></div>
+ <div class="hud-card"><small>BEREICH</small><strong id="zoneDisplay">BIBLIOTHEK</strong></div>
+ <div class="hud-card"><small>WURF</small><strong id="throwDisplay">BEREIT</strong></div>
+</div>
+<div id="mobile"><div class="pad"><button class="touch" data-key="left">◀</button><button class="touch" data-key="right">▶</button></div><div class="pad"><button class="touch" data-key="jump">▲</button><button class="touch" data-key="throw">●</button></div></div>
+<div id="overlay"><div class="panel" id="panel">
+<div style="color:#8bb9d1;font-size:11px;letter-spacing:5px;font-weight:900;margin-bottom:5px">✦ EIN VERFLUCHTES ABENTEUER ✦</div>
+<h1>VILLA ALBTRAUM</h1><div style="color:#ffc96b;font-weight:900;letter-spacing:4px;text-shadow:2px 2px #39283a">DIE TORE DER VILLA</div>
+<div style="height:3px;max-width:310px;margin:12px auto 16px;background:repeating-linear-gradient(90deg,#b78d52 0 8px,transparent 8px 12px)"></div>
+<p class="sub">In der Villa Albtraum warten vier verfluchte Bereiche, den verschneiten toten Garten und danach einen endlosen dunklen Gang in der Villa auf dich: In der uralten Bibliothek rascheln Bücher von selbst, während im Botanischen Garten Ranken und geheimnisvolle Pflanzen lauern. Durchquere lange, düstere Bereiche. Jedes Biom endet an einer gewaltigen Steinmauer. Nur durch das Tor kommst du weiter – dabei erhältst du ein Leben und erst dann wechselt die Welt.</p>
+<div style="margin:12px auto;padding:9px 16px;border:1px solid #ffc96b55;border-radius:12px;max-width:280px;color:#ffd66c;font-weight:900">🏆 DEIN HIGHSCORE: ${highScore}</div><div style="font-weight:800;margin:14px 0 7px">Schwierigkeit wählen</div>
+<div class="cards" style="margin:8px 0 14px">
+<button class="char diffChoice" data-diff="easy"><b>🌱 LEICHT</b><small>Mehr Druck · trotzdem verzeihender</small></button>
+<button class="char diffChoice selected" data-diff="normal"><b>⚔️ NORMAL</b><small>Viele Gegner · schnelle Angriffe</small></button>
+<button class="char diffChoice" data-diff="hard"><b>🔥 SCHWER</b><small>Extrem viele Gegner · sehr schnelle Angriffe</small></button>
+</div><div style="font-weight:800">Wähle deine Figur</div>
+<div class="cards">
+<button class="char selected" data-char="0"><div class="avatar"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<rect width="64" height="64" fill="#172235"/>
+<path fill="#263a55" d="M8 56h48v8H8z"/><path fill="#5b3c70" d="M13 63l5-19 14-7 14 7 5 19z"/>
+<path fill="#d8a878" d="M23 24h18v18H23z"/><path fill="#8b5a4a" d="M21 29h4v8h-4zm18 0h4v8h-4z"/>
+<path fill="#34243e" d="M20 24V15h5V9h15v6h5v10H40v-5H24v5z"/>
+<path fill="#f0c18c" d="M25 29h4v4h-4zm12 0h4v4h-4z"/><path fill="#5b2b38" d="M29 37h8v3h-8z"/>
+<path fill="#241a31" d="M12 16h40v5H12zM17 11h30v5H17zM23 6h18v5H23zM28 1h8v5h-8z"/>
+<path fill="#b48b54" d="M12 16h40v3H12z"/><path fill="#e8c778" d="M29 16h7v3h-7z"/>
+<path fill="#6f4b85" d="M17 43h30v8H17z"/><path fill="#c9a2df" d="M27 44h10v4H27z"/>
+<path fill="#d9e8ff" d="M24 30h3v3h-3zm13 0h3v3h-3z"/>
+<path fill="#9b79c1" d="M8 58h48v3H8z"/>
+<path fill="#b9e6f2" d="M5 8h3v3H5zm50 9h3v3h-3zM8 39h3v3H8z"/>
+</svg></div><b>Hexe</b><small>Stark 💥 · langsam · 6 Startleben · kräftige Zauber</small></button>
+<button class="char" data-char="1"><div class="avatar"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<rect width="64" height="64" fill="#172235"/>
+<path fill="#263a55" d="M8 56h48v8H8z"/><path fill="#31558a" d="M12 63l6-19 14-7 14 7 6 19z"/>
+<path fill="#b97855" d="M23 24h18v18H23z"/><path fill="#3d2a2d" d="M21 25h5v9h-5zm17 0h5v9h-5z"/>
+<path fill="#263653" d="M20 24V15h5V9h15v6h5v10H40v-5H24v5z"/>
+<path fill="#f0c08e" d="M25 29h4v4h-4zm12 0h4v4h-4z"/><path fill="#493044" d="M29 37h8v3h-8z"/>
+<path fill="#17243c" d="M10 16h44v5H10zM16 11h32v5H16zM22 6h20v5H22zM28 1h8v5h-8z"/>
+<path fill="#9dc8f2" d="M10 16h44v3H10z"/><path fill="#f3d27b" d="M29 16h7v3h-7z"/>
+<path fill="#284675" d="M17 43h30v8H17z"/><path fill="#8bbce8" d="M27 44h10v4H27z"/>
+<path fill="#d9e8ff" d="M24 30h3v3h-3zm13 0h3v3h-3z"/>
+<path fill="#a6d5ff" d="M8 58h48v3H8zM5 8h3v3H5zm50 9h3v3h-3zM8 39h3v3H8z"/>
+</svg></div><b>Zauberer</b><small>Schwach 🪽 · sehr schnell · 6 Startleben · leichte Zauber</small></button>
+</div>
+<button id="openSkinMenu" class="secondary" type="button">✨ SKIN-GALERIE</button>
+<div id="skinMenuPanel" class="skin-modal" style="display:none">
+ <div class="skin-dialog">
+  <div style="color:#f5d18a;font-size:11px;font-weight:900;letter-spacing:3px">KLEIDERSCHRANK DER MAGIER</div>
+  <h2>Wähle deinen Skin</h2>
+  <p class="sub">Wähle zuerst Hexe oder Zauberer und dann dein Gewand.</p>
+  <div id="skinHeroTabs" class="skin-tabs"></div>
+  <div id="skinChoices" class="skin-grid"></div>
+  <div id="skinSelectionName" class="skin-selection-name"></div>
+  <button id="closeSkinMenu" type="button">FERTIG</button>
+ </div>
+</div>
+<div class="weapon-select">
+ <div class="weapon-heading">WÄHLE DEINE WAFFE</div>
+ <div class="weapon-options">
+  <button type="button" class="weapon-option selected" data-weapon="wand"><span>✨</span><b>Zauberstab</b><small>Fernkampf & Magie</small></button>
+  <button type="button" class="weapon-option" data-weapon="sword"><span>⚔️</span><b>Schwert</b><small>Nahkampf & Hiebe</small></button>
+ </div>
+</div>
+<button id="start">SPIEL STARTEN ▶</button>
+<div class="hint">STEUERUNG: A / D oder ← / → laufen · W / ↑ / Leertaste = Doppelsprung · F oder X = Waffe einsetzen<br>Wähle am Anfang Zauberstab oder Schwert. Sammle 🧪 Zaubertränke für kurze Zeit Tempo und Unsterblichkeit und 💗 Lebensrunen zum Auffüllen deiner Leben (maximal 6). Springe auf Gegner, um sie zu besiegen! Mit dem Zauberstab greifst du aus der Ferne an; mit dem Schwert triffst du Gegner direkt vor dir. Weiche ihren Projektilen aus. In der Bibliothek lauern Büchermonster, im Garten Pflanzenmonster und im Alchemielabor Feuer- und mehrfarbige Lichtgeister. Dein Highscore bleibt auf diesem Gerät gespeichert. Tablet: Bildschirmknöpfe benutzen.</div>
+</div></div>
+<script>
+(()=>{
+const c=document.getElementById('game'),ctx=c.getContext('2d'),overlay=document.getElementById('overlay'),panel=document.getElementById('panel'),hud=document.getElementById('hud');
+if(!ctx){document.getElementById('panel').insertAdjacentHTML('beforeend','<p style="color:#ffb0b0">Dein Browser unterstützt die Spielgrafik leider nicht.</p>');return;}
+let chosen=0,chosenSkin=0,selectedSkins=[0,0],weaponChoice='wand',swordFlash=0,castFlash=0,difficultyMode='normal',biomeBanner=0,biomeBannerName='',started=false,paused=false,frame=0,score=0,lives=6,maxLives=6,world=0,gameLevel=1,cam=0,doorX=0,nextDoorX=4800,coyote=0,jumpsUsed=0,activeBiome=0,keys={left:false,right:false,jump:false,throw:false},jumpLock=false,balls=[],enemyShots=[],throwCooldown=0,potions=[],hearts=[],potionTimer=0;
+let highScore=0;
+try{highScore=Number(localStorage.getItem('schulhausHighScore')||0)||0;}catch(e){highScore=0;}
+function saveHighScore(){if(score>highScore){highScore=score;try{localStorage.setItem('schulhausHighScore',String(highScore));}catch(e){}}}
+const W=960,H=540,ground=454,gravity=.42,JUMP_SPEED=11.2,MAX_FALL_SPEED=7.2,BIOME_LENGTH=4800,DOOR_TOP=ground-124;
+const heroes=[{name:'Hexe',color:'#e5b36e',shirt:'#58356f',speed:3.25,jump:JUMP_SPEED,ballSpeed:10.2,ballDamage:2,maxLives:6,emoji:'🧙‍♀️'},{name:'Zauberer',color:'#b9794f',shirt:'#315b9a',speed:5.35,jump:JUMP_SPEED,ballSpeed:7.2,ballDamage:1,maxLives:6,emoji:'🧙‍♂️'}];
+const skins=[
+ [
+  {name:'Nachtviolett',robe:'#58356f',hat:'#39224f',trim:'#d7b45e',skin:'#e5b36e',pants:'#263044'},
+  {name:'Smaragd',robe:'#245b48',hat:'#173d36',trim:'#9bd477',skin:'#e5b36e',pants:'#203b35'},
+  {name:'Rubin',robe:'#8a3048',hat:'#572238',trim:'#f2c16b',skin:'#e5b36e',pants:'#422638'},
+  {name:'Eiszauber',robe:'#4a7b9c',hat:'#294d75',trim:'#c8f3ff',skin:'#e5b36e',pants:'#263d56'},
+  {name:'Goldmond',robe:'#9a7135',hat:'#62451f',trim:'#ffe39a',skin:'#e5b36e',pants:'#4a3925'}
+ ],
+ [
+  {name:'Königsblau',robe:'#315b9a',hat:'#294777',trim:'#b9d9ff',skin:'#b9794f',pants:'#263044'},
+  {name:'Waldhüter',robe:'#315b43',hat:'#1e3b32',trim:'#b3df83',skin:'#b9794f',pants:'#243b32'},
+  {name:'Drachenrot',robe:'#873b32',hat:'#51251f',trim:'#f0bd75',skin:'#b9794f',pants:'#3c2929'},
+  {name:'Sternenstaub',robe:'#66508f',hat:'#3c2c66',trim:'#e0c7ff',skin:'#b9794f',pants:'#302a49'},
+  {name:'Silbermond',robe:'#667785',hat:'#3e5266',trim:'#e3f4ff',skin:'#b9794f',pants:'#2d3c4c'}
+ ]
+];
+
+let unfinishedSignX=0;
+let p,platforms,stars,enemies,obstacles,exit,decor,structures,boss,nextChunk=0,particles=[],wasOnGround=false,roomSigns=[];
+function reset(){
+ activeBiome=6;biomeBanner=240;biomeBannerName='DAS EINGANGSPORTAL';nextDoorX=1200;unfinishedSignX=0;castFlash=0;
+ p={x:150,y:ground-52,w:30,h:52,vx:0,vy:0,on:false,inv:72,face:1};coyote=0;jumpsUsed=0;activeBiome=6;
+ cam=0;score=0;maxLives=Math.min(6,heroes[chosen].maxLives);lives=Math.min(6,maxLives);world=0;balls=[];enemyShots=[];potions=[];hearts=[];potionTimer=0;particles=[];throwCooldown=0;nextChunk=0;wasOnGround=false;buildLevel();updateHud();
+}
+function buildLevel(){
+ platforms=[];stars=[];enemies=[];obstacles=[];decor=[];structures=[];roomSigns=[];
+ platforms.push({x:0,y:ground,w:900,h:100,type:'floor'});
+ exit=null;boss=null;nextChunk=900;
+ for(let i=0;i<5;i++)addChunk(i);
+}
+function addChunk(i){
+ const x=nextChunk;
+ if(x>=nextDoorX)return;
+ const biome=activeBiome;
+ const gapChance=(i%5===3)?0.18:0.10;
+ const remaining=nextDoorX-x;
+ const gap=biome===5||remaining<1050?0:(Math.random()<gapChance ? 85+Math.random()*45 : 0);
+ const floorStart=x+gap;
+ const width=Math.min(480+Math.random()*220,Math.max(180,nextDoorX-650-floorStart));
+ platforms.push({x:floorStart,y:ground,w:width-gap,h:100,type:'floor',biome});
+ if(biome===6){
+   // Short, flat start-only portal zone; no extra platforms or hazards.
+   platforms.push({x:floorStart,y:ground,w:Math.max(width,nextDoorX-floorStart),h:100,type:'floor',biome:6});
+   nextChunk=nextDoorX;
+   return;
+ }
+ if(biome===5){
+   // Long, completely empty interior corridor: continuous floor, no enemies or pickups.
+   platforms.push({x:floorStart,y:ground,w:width,h:100,type:'floor',biome:5});
+   nextChunk=floorStart+width;
+   if(nextChunk>=nextDoorX-650){
+     platforms.push({x:nextDoorX-650,y:ground,w:760,h:100,type:'floor',biome:5});
+     nextChunk=nextDoorX;
+   }
+   return;
+ }
+ // Clear, readable parkour route: a broad safe floor remains below,
+ // while the upper route uses spaced, visibly connected stepping stones.
+ const routeY = (i%3===0) ? [392,344,296,344] : (i%3===1 ? [382,326,278,326] : [396,350,304,350]);
+ const routeX = [floorStart+82,floorStart+178,floorStart+276,floorStart+width-148];
+ const routeW = [76,82,92,104];
+ for(let r=0;r<4;r++){
+   platforms.push({x:routeX[r],y:routeY[r],w:routeW[r],h:17,type:'stair',route:true,biome});
+ }
+ // A broad upper gallery is the optional high route, with clear landing space.
+ platforms.push({x:floorStart+width*.48,y:250,w:Math.max(150,width*.34),h:20,type:'upper',biome,route:true});
+ const libraryRooms=[
+  ['KARTENKABINETT','ALTE ATLANTEN · 01'],
+  ['ROMANARCHIV','VERGESSENE GESCHICHTEN · 02'],
+  ['LESESAAL','STILLE ZONE · 03'],
+  ['VERBOTENER TRAKT','ZUTRITT VERBOTEN · 04'],
+  ['ARCHIV DER VILLA','GEHEIME AKTEN · 05'],
+  ['BÜCHERLABYRINTH','REGAL 13 · 06']
+ ];
+ const gardenRooms=[
+  ['ORCHIDEENHAUS','TROPISCHE BLÜTEN · 01'],
+  ['MOOSHAIN','URALTER WALD · 02'],
+  ['KAKTEENHAUS','DORNENPFAD · 03'],
+  ['GLAS-PAVILLON','LICHT UND NEBEL · 04'],
+  ['RANKENRUINE','WILDWUCHS · 05'],
+  ['SEEROSENTEICH','WASSERGARTEN · 06']
+ ];
+ const laboratoryRooms=[
+  ['ALCHEMISTENKAMMER','GEHEIME REZEPTE · 01'],['TRANKKÜCHE','ELIXIERE · 02'],
+  ['KNOCHENARCHIV','DUNKLE STUDIEN · 03'],['STERNENLABOR','HIMMELSKUNDE · 04'],
+  ['UHRWERKZIMMER','MECHANISCHE RÄTSEL · 05'],['VERSUCHSSAAL','ZUTRITT VERBOTEN · 06']
+ ];
+ const diningRooms=[['GROSSER FESTSAAL','DIE LANGE TAFEL · 01'],['KAMINSAAL','DAS LETZTE ABENDMAHL · 02'],['KÜCHENGALERIE','DIE KELLERKÖCHE · 03'],['AHNENBANKETT','PLATZ FÜR NIEMANDEN · 04']];
+ const roomSet=biome===0?libraryRooms:(biome===1?gardenRooms:(biome===2?laboratoryRooms:diningRooms));
+ const room=roomSet[i%roomSet.length];
+ roomSigns.push({x:floorStart+width*.34,title:room[0],sub:room[1],upper:false});
+ roomSigns.push({x:floorStart+width*.68,title:i%2===0?'OBERE GALERIE':'BRÜCKENGANG',sub:'OBERGESCHOSS · ↑',upper:true});
+ // Optional side ledges add route choices without cluttering the main jump line.
+ if(i%2===0)platforms.push({x:floorStart+width*.20,y:365,w:68,h:15,type:'stair',route:true,biome});
+ if(i%3===1)platforms.push({x:floorStart+width*.77,y:372,w:82,h:15,type:'stair',route:true,biome});
+ // Difficulty is calculated before collectibles and enemies are generated.
+ const difficulty=Math.min(9,Math.floor(floorStart/1800));
+ const modeScale=difficultyMode==='easy'?1.02:(difficultyMode==='hard'?1.72:1.34);
+ // Collectibles
+ for(let k=0;k<(difficulty>=3?1:2);k++)stars.push({x:floorStart+115+k*270,y:k===0?340:405,got:false});
+ // Enemies belong to their world: ghosts in the school, plant creatures in the greenhouse.
+ const amount=difficultyMode==='easy'?(i%2===0?2:1):(difficultyMode==='hard'?(i%3===0?4:3):(i%2===0?3:2));
+ for(let n=0;n<amount;n++){
+   const shooter=(i+n)%2===1;
+   const kind=biome===4?(n===0&&i%2===0?6:(shooter?5:4)):(biome===0?(shooter?1:0):(biome===1?(shooter?3:2):(biome===2?(shooter?5:4):(shooter?4:5))));
+   const flying=kind===1;
+   const w=kind===6?58:((kind===2||kind===5)?42:((kind===3||kind===4)?38:34)),h=kind===6?76:(flying?30:((kind===2||kind===5)?34:36));
+   const ex=floorStart+width*(.42+n*.24);
+   enemies.push({x:ex,y:kind===6?ground-h:(flying?ground-145:ground-h),baseY:ground-145,w,h,vx:(i%2?1:-1)*(0.88*modeScale),min:floorStart+width*.30,max:floorStart+width*.88,alive:true,kind,phase:i*1.7+n,cooldown:kind===6?24+Math.random()*12:(difficultyMode==='easy'?88:(difficultyMode==='hard'?42:62))+Math.random()*24,shooter:kind===1||kind===3||kind===5||kind===6});
+ }
+ // Festsaal: Monster lugen aus vergitterten Wandfenstern und schießen auf dich.
+ if(biome===3 && i%2===1){
+   const wx=floorStart+width*.58;
+   enemies.push({x:wx,y:218,w:48,h:58,vx:0,min:wx,max:wx,baseY:218,
+    alive:true,kind:7,phase:i*.8,cooldown:38+Math.random()*28,shooter:true,windowSentry:true});
+ }
+ // Seltene Lebensrunen: erhöhen dauerhaft das Lebensmaximum und heilen ein Herz.
+ if(i%4===2){
+   hearts.push({x:floorStart+width*.40,y:ground-88,w:26,h:28,got:false,phase:Math.random()*6.28});
+ }
+ // Seltene Zaubertränke: gut sichtbar über dem sicheren Bodenweg.
+ if(i%3===1){
+   potions.push({x:floorStart+width*.62,y:ground-82,w:28,h:34,got:false,bob:Math.random()*6.28});
+ }
+ // Freier Laufweg: keine herumliegenden Hindernisse oder Gegenstände am Boden.
+ // More environmental storytelling, all attached to walls/ceilings rather than blocking the path.
+ structures.push({x:floorStart+100,w:150,top:i%2===0?350:300,kind:i%2===0?'low':'tall',biome});
+ decor.push({x:floorStart+180,kind:i%5,biome});
+ // Repeating but varied wall fixtures make every stretch feel inhabited.
+ for(let d=0;d<5;d++){
+   decor.push({x:floorStart+55+d*92,kind:(i*3+d*2)%12,biome,layer:d%3});
+ }
+ if(biome===0){
+   decor.push({x:floorStart+width*.56,kind:12,biome,layer:1}); // bookcase detail
+   decor.push({x:floorStart+width*.82,kind:13,biome,layer:2}); // framed map
+ }else if(biome===1){
+   decor.push({x:floorStart+width*.56,kind:14,biome,layer:1}); // greenhouse window
+   decor.push({x:floorStart+width*.82,kind:15,biome,layer:2}); // hanging glasswork
+ }else if(biome===2){
+   decor.push({x:floorStart+width*.56,kind:16,biome,layer:1});
+   decor.push({x:floorStart+width*.82,kind:17,biome,layer:2});
+ }else{
+   decor.push({x:floorStart+width*.56,kind:18,biome,layer:1});
+   decor.push({x:floorStart+width*.82,kind:19,biome,layer:2});
+ }
+ if(biome===1){for(let v=0;v<4;v++)decor.push({x:floorStart+v*125+35,kind:5+v%3,biome:1});}
+ if(biome===3 && !boss && floorStart+width>=nextDoorX-1050){
+   boss={x:nextDoorX-760,y:ground-104,w:86,h:104,hp:(difficultyMode==='easy'?10:(difficultyMode==='hard'?20:15)),maxHp:(difficultyMode==='easy'?10:(difficultyMode==='hard'?20:15)),alive:true,phase:0,cooldown:155,flash:0};
+   platforms.push({x:nextDoorX-1050,y:ground,w:900,h:100,type:'floor',biome:3});
+   platforms.push({x:nextDoorX-990,y:365,w:120,h:16,type:'stair',route:true,biome});
+   platforms.push({x:nextDoorX-550,y:365,w:120,h:16,type:'stair',route:true,biome});
+ }
+ nextChunk=floorStart+width+gap;
+ if(nextChunk>=nextDoorX-650){
+   // A continuous stone landing leads directly to the checkpoint door.
+   platforms.push({x:nextDoorX-650,y:ground,w:760,h:100,type:'floor',biome:activeBiome});
+   nextChunk=nextDoorX;
+ }
+}
+function generateAhead(){
+ while(nextChunk<cam+W+700 && nextChunk<nextDoorX)addChunk(Math.floor(nextChunk/600));
+ // Keep old world objects bounded for performance.
+ const cutoff=cam-500;
+ platforms=platforms.filter(v=>v.x+v.w>cutoff);
+ stars=stars.filter(v=>v.x>cutoff||!v.got);potions=potions.filter(v=>v.x>cutoff||!v.got);hearts=hearts.filter(v=>v.x>cutoff||!v.got);
+ enemies=enemies.filter(v=>v.x+v.w>cutoff||v.alive); enemyShots=enemyShots.filter(v=>v.life>0&&v.x>cutoff);
+ obstacles=obstacles.filter(v=>v.x+v.w>cutoff);
+ structures=structures.filter(v=>v.x+v.w>cutoff);
+ roomSigns=roomSigns.filter(v=>v.x>cutoff);
+ decor=decor.filter(v=>v.x>cutoff);
+}
+function burst(x,y,color,count=8){
+ for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,sp=1+Math.random()*3;particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1,life:18+Math.random()*12,max:30,color,size:2+Math.random()*3});}
+}
+function updateParticles(dt){for(const q of particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=.16*dt;q.life-=dt;}particles=particles.filter(q=>q.life>0);}
+function updateHud(){
+ maxLives=Math.max(1,Math.min(6,maxLives));lives=Math.max(0,Math.min(maxLives,6,lives));
+ saveHighScore();
+ const life=document.getElementById('lifeDisplay'),sc=document.getElementById('scoreDisplay'),hs=document.getElementById('highScoreDisplay'),zone=document.getElementById('zoneDisplay'),thr=document.getElementById('throwDisplay');
+ if(life)life.textContent='♥'.repeat(Math.max(0,lives))+'♡'.repeat(Math.max(0,maxLives-lives))+'  '+lives+'/'+maxLives;
+ if(sc)sc.textContent=String(score); if(hs)hs.textContent=String(Math.max(highScore,score));
+ if(zone)zone.textContent=activeBiome===6?'EINGANGSPORTAL':(activeBiome===5?'LEVEL 2 · VILLA-GANG':(gameLevel===2?'LEVEL 2 · TOTER GARTEN':(['BIBLIOTHEK','BOTANISCHER GARTEN','ALCHEMISTENLABOR','FESTSAAL'][activeBiome]||'VILLA')));
+ if(thr)thr.textContent=throwCooldown<=0?'BEREIT':Math.max(1,Math.ceil(throwCooldown/60))+' s';
+}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),w,h)}
+function drawRoom(){
+ if(activeBiome===6){
+  // Small starting portal only: one doorway, no stairs and no level changes.
+  const bg=ctx.createLinearGradient(0,0,0,540);
+  bg.addColorStop(0,'#18202a');bg.addColorStop(1,'#29232c');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,960,540);
+  rect(0,72,960,3,'#645463');
+  rect(690,158,172,224,'#090d17');rect(704,170,144,212,'#574457');
+  rect(716,184,120,198,'#182638');
+  ctx.fillStyle='#293d55';ctx.beginPath();ctx.moveTo(716,250);ctx.lineTo(776,190);ctx.lineTo(836,250);ctx.closePath();ctx.fill();
+  rect(724,250,104,132,'#1b2b3d');
+  rect(684,382,184,9,'#c09b6d');rect(676,391,200,7,'#59475a');
+  for(let x of [676,856]){rect(x,176,10,205,'#90777c');rect(x-5,166,20,9,'#c4a477');}
+  for(let x of [230,520]){
+   rect(x,210,6,32,'#98744f');rect(x-5,204,16,7,'#c59a5f');rect(x-3,192,12,12,'#ffd98a');
+  }
+  rect(0,382,960,158,'#302a36');rect(0,382,960,7,'#9d806c');
+  for(let x=0;x<960;x+=80){rect(x,390,2,150,'#4d414e');rect(x+4,390,70,2,'#756070');}
+ } else if(activeBiome===4){
+  // Outdoor winter garden: open sky, snowy mountains, evergreen trees and frozen ground.
+  const sky=ctx.createLinearGradient(0,0,0,540);
+  sky.addColorStop(0,'#527b9b');sky.addColorStop(.55,'#a9c9d8');sky.addColorStop(1,'#e4eef0');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,960,540);
+  ctx.fillStyle='#f3f7e9';ctx.beginPath();ctx.arc(790,92,34,0,Math.PI*2);ctx.fill();
+  for(let i=0;i<5;i++){
+   const cx=(i*227+frame*.12)%1120-80,cy=54+(i%3)*42;
+   ctx.fillStyle='rgba(239,248,250,.52)';
+   ctx.beginPath();ctx.ellipse(cx,cy,54,11,0,0,Math.PI*2);ctx.fill();
+   ctx.beginPath();ctx.ellipse(cx+25,cy-5,32,10,0,0,Math.PI*2);ctx.fill();
+  }
+  ctx.fillStyle='#9eb8c8';ctx.beginPath();ctx.moveTo(0,300);
+  for(let x=0;x<=1000;x+=100)ctx.lineTo(x,210+Math.sin(x*.012)*36);
+  ctx.lineTo(960,390);ctx.lineTo(0,390);ctx.closePath();ctx.fill();
+  for(let x=-30;x<1050;x+=230){
+   ctx.fillStyle='#dce8eb';ctx.beginPath();ctx.moveTo(x,285);ctx.lineTo(x+85,135);ctx.lineTo(x+175,285);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#f8fbfa';ctx.beginPath();ctx.moveTo(x+85,135);ctx.lineTo(x+48,205);ctx.lineTo(x+85,190);ctx.lineTo(x+122,207);ctx.closePath();ctx.fill();
+  }
+  // Snow-covered fir trees in the open landscape.
+  for(let i=0;i<9;i++){
+   const tx=(i*151+40-cam*.18)%1120-80,base=382-(i%3)*15,h=130+(i%4)*24;
+   rect(tx-5,base-h*.35,10,h*.55,'#4c5960');
+   for(let k=0;k<4;k++){
+    const yy=base-h+k*h*.19,ww=24+k*12;
+    ctx.fillStyle=k%2?'#dce9ed':'#c5d9e1';
+    ctx.beginPath();ctx.moveTo(tx,yy-22);ctx.lineTo(tx-ww,yy+22);ctx.lineTo(tx+ww,yy+22);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#eef7f7';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(tx,yy-18);ctx.lineTo(tx-ww+5,yy+18);ctx.moveTo(tx,yy-18);ctx.lineTo(tx+ww-5,yy+18);ctx.stroke();
+   }
+  }
+  rect(0,382,960,158,'#dce8e8');rect(0,382,960,8,'#f8ffff');
+  for(let x=0;x<960;x+=70){rect(x,396,48,3,'#b7cbd1');rect(x+18,420,34,2,'#c2d4d8');}
+  for(let i=0;i<18;i++){
+   const x=(i*83+frame*.06)%980;
+   rect(x,368-(i%3)*8,16,7,'#b9d0d5');rect(x+4,361-(i%3)*8,9,7,'#edf7f7');
+  }
+  for(let i=0;i<65;i++){
+   const x=(i*97+frame*(.25+(i%3)*.08))%960;
+   const y=(i*61+frame*(.45+(i%4)*.08))%540;
+   rect(x,y,2+(i%2),2+(i%2),'#f7ffff');
+  }
+ } else if(activeBiome===0){
+  // THE HAUNTED LIBRARY: walnut paneling, vaulted ceiling and towering bookcases.
+  rect(0,0,960,540,'#211b2b');rect(0,0,960,102,'#171522');
+  for(let x=0;x<960;x+=240){
+   rect(x+8,5,224,10,'#382a36');rect(x+18,15,204,5,'#806044');
+   rect(x+28,20,184,4,'#c49a62');rect(x+35,26,170,3,'#51364a');
+   // old brass ceiling lamps
+   rect(x+108,32,22,4,'#c18b45');rect(x+116,36,6,16,'#e6c477');
+   rect(x+106,51,26,5,'#f8d98a');rect(x+101,56,36,3,'#aa713d');
+  }
+  rect(0,102,960,235,'#493244');
+  // deep wall panels
+  for(let x=0;x<960;x+=120){
+   rect(x,108,108,220,'#583b43');rect(x+5,114,98,207,'#35283a');
+   rect(x+10,120,88,196,'#72503f');rect(x+15,125,78,185,'#392a3a');
+   rect(x+18,130,72,176,'#241f32');
+   rect(x+7,112,94,5,'#c08a51');rect(x+7,320,94,5,'#b37b4b');
+  }
+  // Bookcases packed with colorful pixel-spine books.
+  for(let x=24;x<960;x+=190){
+   rect(x,132,132,184,'#281b27');rect(x+5,137,122,174,'#875537');
+   rect(x+9,142,114,164,'#3c2734');
+   for(let shelf=0;shelf<4;shelf++){
+    const sy=148+shelf*39;rect(x+8,sy+30,116,5,'#c08a50');rect(x+8,sy+33,116,3,'#4a2c2a');
+    let bx=x+13;
+    for(let b=0;b<10;b++){
+     const bw=6+(b%3)*2, bh=18+(b*7+shelf*3)%10;
+     const colors=['#a84e45','#d2a15a','#537e83','#6e5a91','#c16d48','#47734e','#d4c08a'];
+     rect(bx,sy+29-bh,bw,bh,colors[(b+shelf*2)%colors.length]);
+     rect(bx+1,sy+31-bh,Math.max(2,bw-2),2,'#f0d59b');
+     bx+=bw+2;
+    }
+   }
+   rect(x+60,126,12,8,'#e5bd71');rect(x+63,120,6,7,'#ffe6a3');
+  }
+  // Reading desks, brass lamps, globes, ladders and stacks of ancient books.
+  for(let x=54;x<960;x+=285){
+   // long reading table
+   rect(x,278,112,8,'#573a2d');rect(x+5,286,102,5,'#a4774d');
+   rect(x+13,291,7,42,'#35232a');rect(x+94,291,7,42,'#35232a');
+   // open books and loose pages
+   rect(x+26,269,25,8,'#e5d5b2');rect(x+51,269,25,8,'#d7c49a');
+   rect(x+50,270,2,7,'#725344');rect(x+30,272,15,1,'#8d7864');
+   // brass lamp
+   rect(x+80,256,5,13,'#b78643');rect(x+73,252,20,5,'#d6b46d');rect(x+77,248,12,4,'#f2d58b');
+   // globe on a stand
+   rect(x+13,248,22,22,'#4e8d91');rect(x+17,251,14,16,'#7eb9a4');
+   rect(x+22,269,4,9,'#b58b54');rect(x+16,277,16,3,'#80603f');
+   rect(x+20,255,5,4,'#d5c17b');rect(x+26,260,4,3,'#c3a96c');
+   // small stack of books
+   rect(x+102,267,20,5,'#a64d42');rect(x+105,261,18,5,'#d0a354');rect(x+100,255,22,5,'#547d83');
+  }
+  // Rolling library ladders against the bookcases.
+  for(let x=135;x<960;x+=380){
+   rect(x,155,4,160,'#b78a50');rect(x+35,155,4,160,'#b78a50');
+   for(let yy=165;yy<306;yy+=25)rect(x,yy,39,3,'#d1a56b');
+   rect(x-4,314,12,5,'#30252b');rect(x+31,314,12,5,'#30252b');
+  }
+  // Ornate chandelier chains and crystal lights.
+  for(let x=210;x<960;x+=430){
+   rect(x,58,3,27,'#b58b50');rect(x-20,83,43,4,'#d7b56d');
+   rect(x-14,87,4,10,'#e6c77f');rect(x+5,87,4,10,'#e6c77f');
+   rect(x-3,88,8,13,'#fff0b5');
+  }
+  // Hidden library easter eggs: a tiny ghost bookmark, a suspiciously familiar sock and secret title spines.
+  rect(176,285,8,11,'#f2eee1');rect(178,282,4,4,'#f2eee1');rect(178,288,2,2,'#282033');rect(182,288,2,2,'#282033');
+  rect(820,266,18,7,'#b84b57');rect(824,260,10,8,'#e4d4bc');
+  ctx.fillStyle='#e8d3a7';ctx.font='7px monospace';ctx.fillText('DAS BUCH DER 1001 TÜREN',32,130);
+  ctx.fillText('BITTE NICHT FÜTTERN',748,130);
+  // A tiny brass key glints between two bookshelves.
+  rect(905,300,12,3,'#e7c36d');rect(914,297,4,9,'#e7c36d');rect(902,298,4,7,'#e7c36d');
+  // A dark burgundy runner rug with gold pixel borders.
+  rect(0,326,960,10,'#5d303b');rect(0,327,960,2,'#d0a15c');rect(0,334,960,2,'#d0a15c');
+  // Tall arched windows and moonlit blue glass.
+  for(let x=75;x<960;x+=300){
+   rect(x,115,58,142,'#171a2b');rect(x+5,120,48,132,'#527b91');
+   rect(x+10,125,38,122,'#9bb8bb');rect(x+13,130,32,112,'#7898a5');
+   rect(x+27,120,4,132,'#30253a');rect(x+5,183,48,5,'#30253a');
+   rect(x+18,140,8,8,'#e6e4bd');rect(x+33,157,6,6,'#d9e8d2');
+  }
+  // Floor: dark parquet with gold inlay.
+  rect(0,337,960,12,'#9a6945');rect(0,349,960,7,'#d0a36a');rect(0,356,960,184,'#302536');
+  for(let y=360;y<540;y+=30){rect(0,y,960,2,'#63434a');for(let x=(y%60===0?0:48);x<960;x+=96){rect(x,y,2,30,'#513740');rect(x+12,y+6,32,2,'#98704c')}}
+  for(let x=30;x<960;x+=190){rect(x,342,70,4,'#e0b66f');rect(x+5,346,60,2,'#76513c')}
+ } else if(activeBiome===1){
+  // THE BOTANICAL GARDEN: glass conservatory, ancient trees, lush foliage and water.
+  rect(0,0,960,540,'#102a27');rect(0,0,960,104,'#183b34');
+  // Glass roof ribs with shafts of daylight.
+  for(let x=-20;x<1000;x+=120){
+   rect(x,0,8,112,'#315e4b');rect(x+8,0,3,108,'#9bcf91');
+   rect(x+18,4,72,4,'#b8efaa');rect(x+25,10,56,3,'#d9ffc2');
+  }
+  rect(0,104,960,235,'#214e3d');
+  // Misty greenhouse panes.
+  for(let x=20;x<960;x+=160){
+   rect(x,112,132,205,'#142f30');rect(x+6,118,120,192,'#4c8963');
+   rect(x+11,123,110,182,'#7bb879');rect(x+17,130,98,168,'#9acb83');
+   rect(x+64,118,5,192,'#285343');rect(x+6,213,120,5,'#285343');
+   rect(x+13,136,16,12,'#c8e9a2');rect(x+88,245,20,10,'#c8e9a2');
+  }
+  // Distant tree trunks and layered pixel canopies.
+  for(let x=5;x<1000;x+=210){
+   rect(x+48,150,18,190,'#533d2d');rect(x+53,158,7,175,'#765338');
+   rect(x+16,142,76,18,'#28613f');rect(x+5,130,42,24,'#347849');
+   rect(x+42,116,62,28,'#438b4b');rect(x+70,134,44,20,'#2b7041');
+   rect(x+20,126,14,8,'#8dc86a');rect(x+81,119,12,8,'#a1d77b');
+   // Hanging vines from branches
+   for(let v=0;v<3;v++){rect(x+25+v*25,153,3,34+v*9,'#1d6946');rect(x+18+v*25,170+v*5,10,4,'#66ad55');}
+  }
+  // Flowering plants, ferns and broad leaves at floor level.
+  for(let x=12;x<980;x+=82){
+   rect(x+20,286,5,59,'#286b43');rect(x+4,307,22,7,'#4d9d4e');rect(x+19,293,22,7,'#70bd59');
+   rect(x+7,298,9,5,'#a3d86b');rect(x+29,282,12,6,'#a3d86b');
+   rect(x+17,276,12,10,'#d5a6d1');rect(x+21,272,5,5,'#ffe5a8');
+   rect(x+2,332,52,8,'#183e30');
+  }
+  // Dense botanical collection: monstera, palms, orchids, succulents and plant labels.
+  for(let x=28;x<960;x+=148){
+   // large monstera leaves
+   rect(x+28,218,5,58,'#2b7749');rect(x+10,222,42,8,'#3e9a57');
+   rect(x+5,214,18,13,'#57ad5c');rect(x+35,208,22,14,'#65b85c');
+   rect(x+13,205,13,8,'#91d16c');rect(x+31,221,18,8,'#8ad36b');
+   // plant pot and rim
+   rect(x+16,279,34,8,'#b66e4c');rect(x+20,287,26,21,'#8b493c');rect(x+17,278,32,4,'#d99a68');
+   // small plant label
+   rect(x+56,270,3,28,'#c8b17a');rect(x+59,272,30,10,'#e0d1a4');
+   rect(x+63,276,19,2,'#6d5945');
+   // orchid bloom
+   rect(x+74,232,4,34,'#3e8a4c');rect(x+66,226,10,8,'#c68ac1');
+   rect(x+77,222,11,8,'#e0a6d1');rect(x+72,219,8,6,'#f2d2e4');
+   // fern fronds
+   rect(x+104,248,3,42,'#2b7848');
+   for(let k=0;k<4;k++){rect(x+91+k*5,251+k*5,14,4,'#63b65a');rect(x+106,250+k*5,13,4,'#4a9a50');}
+  }
+  // Stepping-stone path across the garden floor.
+  for(let i=0;i<14;i++){
+   const sx=i*78-((frame*.35)%78);
+   rect(sx,359+(i%3)*4,52,13,'#73716a');rect(sx+5,356+(i%3)*4,42,4,'#aaa18b');
+   rect(sx+10,362+(i%3)*4,18,2,'#c5bba2');
+  }
+  // Raised greenhouse potting benches with watering cans and seed trays.
+  for(let x=90;x<960;x+=330){
+   rect(x,300,130,7,'#74513a');rect(x+8,307,7,32,'#44372f');rect(x+114,307,7,32,'#44372f');
+   for(let k=0;k<5;k++){rect(x+12+k*22,287,17,13,'#a65f42');rect(x+17+k*22,279,7,10,'#4b9b50');}
+   rect(x+89,286,23,10,'#8b9da0');rect(x+93,282,14,4,'#c5d5d1');rect(x+108,284,5,5,'#c5d5d1');
+  }
+  // Thick hanging creepers and occasional luminous blossoms.
+  for(let x=55;x<960;x+=125){
+   rect(x,0,4,96+(x%4)*13,'#1f6844');rect(x-8,58,12,5,'#4c9d4d');
+   rect(x+4,78,12,5,'#69b65a');rect(x-5,103,10,5,'#4c9d4d');
+   if(x%3===0){rect(x-3,112,8,8,'#d38ac4');rect(x+3,116,7,6,'#f0c3df');}
+  }
+  // Garden easter eggs: a tiny frog, mushroom ring and drifting pixel butterflies.
+  rect(632,332,15,8,'#4e9b58');rect(634,328,4,5,'#8dd66b');rect(642,328,4,5,'#8dd66b');
+  rect(637,330,2,2,'#18251e');rect(644,330,2,2,'#18251e');
+  for(let m=0;m<5;m++){const mx=120+m*29;rect(mx,325,5,8,'#e8d5b1');rect(mx-3,322,11,4,m%2?'#c75d61':'#d6a45d');}
+  for(let b=0;b<4;b++){
+   const bx=(150+b*211+Math.sin(frame*.035+b)*14)%950, by=145+b*31+Math.cos(frame*.04+b)*8;
+   rect(bx-5,by,5,4,'#e9c6f2');rect(bx+3,by,5,4,'#e9c6f2');rect(bx,by,3,5,'#584a72');
+  }
+  // Fireflies blink gently near the greenhouse leaves.
+  for(let f=0;f<12;f++){
+   const fx=(f*83+frame*(.18+f%3*.04))%950, fy=180+(f*47)%145;
+   const alpha=.25+.5*(.5+.5*Math.sin(frame*.12+f));
+   ctx.globalAlpha=alpha;rect(fx,fy,3,3,'#e8ff9c');ctx.globalAlpha=1;
+  }
+  // A little reflecting pond with lily pads.
+  rect(0,341,960,10,'#75a76c');rect(0,351,960,189,'#183c37');
+  rect(0,368,960,28,'#285e59');rect(0,372,960,3,'#8ccf9b');
+  for(let x=24;x<960;x+=118){rect(x,377,28,5,'#76b96b');rect(x+8,374,7,3,'#b0df8a');}
+  for(let y=405;y<540;y+=36){rect(0,y,960,2,'#2c5847');for(let x=(y%72===0?0:48);x<960;x+=96)rect(x,y,2,36,'#234b3f')}
+  // Thick foreground roots and curling vines.
+  for(let x=35;x<960;x+=170){rect(x,0,5,54+(x%3)*17,'#1d6945');rect(x+5,40,13,4,'#4e9a4d');rect(x-7,58,13,4,'#70b95c');}
+ }
+ else if(activeBiome===3){
+  // GREAT DINING HALL: gothic banquet room, fireplace, torches and long table.
+  rect(0,0,960,540,'#241b1b');rect(0,0,960,102,'#171316');
+  for(let x=0;x<960;x+=160){
+   rect(x+7,18,146,9,'#49302a');rect(x+15,28,130,5,'#9c7048');
+   rect(x+23,35,114,3,'#5a3930');rect(x+20,107,120,218,'#49312b');
+   rect(x+27,114,106,205,'#302326');rect(x+33,121,94,190,'#694333');
+   rect(x+38,126,84,180,'#3b2928');rect(x+12,110,136,6,'#b08352');
+   rect(x+12,319,136,6,'#9b7048');
+   rect(x+48,143,56,76,'#8b3436');rect(x+52,147,48,68,'#c08b55');
+   rect(x+58,153,36,56,'#713c36');rect(x+68,163,16,30,'#e0c27d');
+   rect(x+72,170,8,16,'#7d332e');
+   rect(x+17,238,7,5,'#7e7062');rect(x+19,219,3,20,'#9b7954');
+   rect(x+14,211,13,10,'#e58a3e');rect(x+17,205,7,9,'#ffd17a');
+   rect(x+139,238,7,5,'#7e7062');rect(x+141,219,3,20,'#9b7954');
+   rect(x+137,211,13,10,'#e58a3e');rect(x+140,205,7,9,'#ffd17a');
+  }
+  // Giant fireplace.
+  rect(365,116,230,222,'#17151a');rect(378,128,204,202,'#71605a');
+  rect(391,143,178,187,'#33272a');rect(406,169,148,161,'#090b10');
+  rect(419,292,122,38,'#61392c');rect(433,300,96,30,'#a34d2c');
+  rect(445,286,18,44,'#f18b35');rect(475,267,23,63,'#ffd36c');rect(510,290,17,40,'#e66c32');
+  rect(357,111,246,12,'#b28a5b');rect(372,100,216,12,'#4d3932');
+  // Long banquet table, place settings, candles and goblets.
+  rect(58,335,844,18,'#573526');rect(68,330,824,8,'#bd8a53');
+  rect(75,352,18,91,'#382522');rect(825,352,18,91,'#382522');
+  rect(112,353,12,74,'#65432f');rect(836,353,12,74,'#65432f');rect(90,337,780,4,'#e2bd7d');
+  for(let x=120;x<850;x+=92){
+   rect(x,318,38,5,'#d7c8a4');rect(x+4,312,30,6,'#f0e5c9');
+   rect(x+44,307,5,13,'#9dbac0');rect(x+43,304,7,4,'#d5e4dc');
+   rect(x+60,303,5,18,'#d8bd78');rect(x+57,299,11,5,'#e7a24e');rect(x+57,292,11,8,'#ffd27b');
+   rect(x+2,333,3,13,'#d9c8a5');rect(x+36,333,3,13,'#d9c8a5');
+  }
+  for(let x=105;x<880;x+=112){
+   rect(x,362,34,38,'#65402e');rect(x+4,366,26,29,'#9b6841');rect(x+8,371,18,18,'#4b3029');
+   rect(x-2,397,5,31,'#38251f');rect(x+31,397,5,31,'#38251f');rect(x,359,34,5,'#c09358');
+  }
+  // Chandeliers and hanging banners.
+  for(let x=100;x<960;x+=300){
+   rect(x,5,4,42,'#a17b50');rect(x-38,45,80,5,'#c09a61');
+   for(let q=0;q<4;q++){rect(x-30+q*20,50,5,13,'#e7b65f');rect(x-31+q*20,44,7,7,'#ffe0a0');}
+  }
+  // Sideboards, roast platters, barrels and casks.
+  rect(12,279,118,12,'#67412d');rect(18,291,9,43,'#38251f');rect(114,291,9,43,'#38251f');
+  rect(31,265,40,12,'#b28b54');rect(38,258,26,8,'#bd633c');rect(45,252,13,8,'#e3a45c');
+  rect(830,270,116,12,'#67412d');rect(837,282,9,52,'#38251f');rect(931,282,9,52,'#38251f');
+  for(let x=850;x<930;x+=24){rect(x,250,13,20,'#7d4533');rect(x+3,244,7,7,'#c5a16b');}
+  rect(0,344,960,196,'#30282a');
+  for(let y=350;y<540;y+=32){rect(0,y,960,2,'#514143');for(let x=(y%64===0?0:48);x<960;x+=96){rect(x,y,2,32,'#1c191e');rect(x+18,y+9,22,2,'#574448');}}
+  for(let x=60;x<960;x+=180){rect(x,235,42,28,'#8e6a43');rect(x+4,239,34,20,'#c3a36c');rect(x+14,243,14,12,'#713a35');}
+
+ } else {
+  // THE ALCHEMIST'S LABORATORY: dark stone, fireplace, copper pipes and potion workbenches.
+  rect(0,0,960,540,'#171923');rect(0,0,960,105,'#11131d');
+  // Deep stone walls and heavy gothic masonry.
+  for(let x=0;x<960;x+=120){
+   rect(x,108,112,224,'#34313b');rect(x+5,114,102,210,'#49414a');
+   rect(x+10,120,92,196,'#292936');rect(x+12,125,88,3,'#76616a');
+   rect(x,211,112,3,'#211f29');rect(x+55,115,3,95,'#211f29');
+  }
+  // Arched laboratory windows with a moonlit violet tint.
+  for(let x=92;x<960;x+=330){
+   rect(x,115,72,137,'#11131d');rect(x+5,120,62,127,'#463d61');
+   rect(x+10,125,52,117,'#82759b');rect(x+15,130,42,107,'#4f6280');
+   rect(x+33,120,4,127,'#302b39');rect(x+5,181,62,5,'#302b39');
+   rect(x+18,143,7,7,'#d8d4f0');rect(x+44,158,8,8,'#c4d4e8');
+  }
+  // Large fireplace, orange fire and hanging cauldron.
+  rect(38,170,178,169,'#11121a');rect(48,178,158,151,'#71605a');
+  rect(57,188,140,141,'#28232b');rect(68,211,118,118,'#080b12');
+  rect(78,289,98,40,'#4b2924');rect(89,300,76,29,'#a64f2e');
+  rect(96,294,14,25,'#ed9a43');rect(120,280,18,49,'#ffcf65');
+  rect(145,295,15,26,'#e86e35');rect(108,271,35,20,'#f2c35a');
+  rect(52,177,150,7,'#a18b78');rect(65,168,124,8,'#514b52');
+  // Chimney and mantle ornaments.
+  rect(95,105,64,65,'#292630');rect(102,110,50,55,'#5b5054');
+  rect(112,142,29,22,'#171923');
+  rect(76,162,12,9,'#d0ad69');rect(168,161,13,10,'#d0ad69');
+  // Cauldron hanging from an iron tripod.
+  rect(278,120,4,110,'#8a8a91');rect(250,120,60,4,'#8a8a91');
+  rect(265,225,34,5,'#8d8a8a');rect(257,230,50,19,'#25252d');
+  rect(252,244,60,17,'#11131b');rect(258,261,48,8,'#8c8a8b');
+  rect(260,248,44,7,'#62b77c');rect(266,243,31,5,'#a0e18c');
+  rect(272,235,5,6,'#b7f0a4');rect(291,237,5,5,'#d7f6a7');
+  // Potion shelves with colorful bottles and jars.
+  for(let x=350;x<960;x+=190){
+   rect(x,139,142,9,'#684a3d');rect(x+5,148,132,4,'#a47a50');
+   rect(x,207,142,8,'#684a3d');rect(x+5,215,132,4,'#a47a50');
+   for(let shelf=0;shelf<2;shelf++){
+    for(let b=0;b<7;b++){
+     const bx=x+10+b*18, by=shelf===0?117:185;
+     const cols=['#58a879','#8a65bb','#d3a34d','#4e9db2','#bc5573','#9bb85b'];
+     rect(bx+4,by+8,8,19,cols[(b+shelf*2)%cols.length]);
+     rect(bx+6,by+3,4,7,'#c6b58e');rect(bx+2,by+25,12,3,'#d5c49b');
+     rect(bx+6,by+13,4,4,'#f4e4b1');
+    }
+   }
+  }
+  // Workbench with test tubes, flasks, books and brass instruments.
+  rect(315,293,600,12,'#6b4b3c');rect(323,305,12,37,'#392a2b');rect(892,305,12,37,'#392a2b');
+  for(let x=350;x<870;x+=82){
+   rect(x,270,5,23,'#a5d2d5');rect(x-4,267,13,4,'#d8e7df');
+   rect(x+18,274,16,19,'#9b6ab3');rect(x+21,268,10,7,'#d8c7ad');
+   rect(x+43,281,12,12,'#4b9c9b');rect(x+46,274,6,8,'#d4d0b7');
+  }
+  // Books, scrolls and a skull specimen on the bench.
+  rect(580,279,38,8,'#9a4d46');rect(584,273,35,6,'#c69a52');rect(590,267,28,6,'#526f83');
+  rect(760,276,18,17,'#c5b89d');rect(764,271,10,8,'#e1d5c0');
+  rect(766,278,3,3,'#28232b');rect(773,278,3,3,'#28232b');
+  // Cuckoo clock: carved case, clock face, hands and little bird door.
+  rect(700,70,72,93,'#5c392c');rect(706,76,60,80,'#a2764e');
+  rect(713,82,46,43,'#dfc78e');rect(718,87,36,33,'#efe0b0');
+  rect(734,89,3,14,'#51413c');rect(734,101,11,3,'#51413c');
+  rect(726,127,19,18,'#4a3029');rect(731,122,9,7,'#d7b45e');
+  rect(735,119,3,8,'#e9d28a');rect(729,114,13,5,'#a85b47');
+  rect(722,147,6,12,'#d0a66b');rect(747,147,6,12,'#d0a66b');
+  // Brass tubing, gauges and pipes along the wall.
+  rect(880,105,7,165,'#9c7748');rect(887,105,45,6,'#9c7748');
+  rect(880,265,52,6,'#9c7748');rect(904,110,5,155,'#c49a58');
+  rect(838,115,26,26,'#8a744e');rect(843,120,16,16,'#d4c58f');
+  rect(850,121,2,9,'#54483d');rect(850,130,7,2,'#54483d');
+  // Tiny magical lab companions: a moon-moth, a sleepy salamander and a one-eyed puffball.
+  // Moon-moth hovering beside the potion shelves.
+  const mothX=430+Math.sin(frame*.035)*9, mothY=250+Math.sin(frame*.07)*5;
+  rect(mothX-7,mothY,6,5,'#c9c4f2');rect(mothX+3,mothY,6,5,'#c9c4f2');
+  rect(mothX-2,mothY-2,8,8,'#f1e5b4');rect(mothX+1,mothY,2,2,'#34253f');
+  // Tiny salamander curled up on a warm fireplace stone.
+  rect(185,311,20,6,'#d87948');rect(190,305,8,8,'#f0a45a');rect(198,307,6,4,'#e4c16d');
+  rect(193,306,2,2,'#241d24');
+  // Puffball familiar with one bright eye, bobbing on the workbench.
+  const puffY=267+Math.sin(frame*.06)*3;
+  rect(650,puffY,17,13,'#b5a4d8');rect(654,puffY-4,9,5,'#d7c7ed');
+  rect(657,puffY+3,3,3,'#fff3c4');rect(658,puffY+4,1,1,'#201a2a');
+  // Little bat-shaped familiar sleeping upside-down from a pipe.
+  rect(906,149,4,17,'#393044');rect(896,164,9,8,'#6c587f');rect(911,164,9,8,'#6c587f');
+  rect(901,170,13,8,'#514060');rect(904,169,2,2,'#e8d9a5');
+  // Extra alchemy curiosities: a crystal cluster and a jar with a tiny storm cloud.
+  for(let c=0;c<4;c++){rect(520+c*5,255-c%2*7,4,13+c%2*7,['#a78bd6','#78c8cf','#d9a7e2','#a6d68d'][c]);}
+  rect(812,258,22,29,'#79a9a4');rect(816,251,14,8,'#c9d5c7');
+  rect(818,264,12,4,'#d6e8ee');rect(821,260,5,4,'#eef5ff');
+  // Funny tiny sign on the bench.
+  rect(714,285,54,12,'#d8c89c');rect(718,288,46,2,'#57463c');
+  ctx.fillStyle='#332631';ctx.font='6px monospace';ctx.fillText('NICHT TRINKEN!',718,294);
+  // A tiny pair of enchanted spectacles left on a book.
+  rect(570,264,8,5,'#e4c36e');rect(583,264,8,5,'#e4c36e');rect(578,265,5,2,'#e4c36e');
+  // Floor of worn flagstones with a glowing rune circle.
+  rect(0,344,960,196,'#282733');
+  for(let y=350;y<540;y+=32){rect(0,y,960,2,'#48404a');for(let x=(y%64===0?0:48);x<960;x+=96){rect(x,y,2,32,'#171923');rect(x+15,y+8,24,2,'#4a414a')}}
+  // Alchemy circle drawn as stepped pixel rings.
+  rect(380,394,200,4,'#7560a0');rect(360,408,240,4,'#7560a0');
+  rect(380,422,200,4,'#7560a0');rect(400,436,160,4,'#7560a0');
+  rect(376,398,4,28,'#7560a0');rect(580,398,4,28,'#7560a0');
+  rect(470,403,20,4,'#c6a4df');rect(480,390,4,50,'#a58bc8');
+ }
+ // Villa architecture: dark stone pilasters and worn masonry bands.
+ for(let x=0;x<960;x+=240){
+  rect(x,100,7,238,'#493c3a');rect(x+7,103,3,230,'#62545a');
+  rect(x+222,100,7,238,'#493c3a');rect(x+219,103,3,230,'#62545a');
+  rect(x+12,332,210,5,'#30252b');
+ }
+ rect(0,0,960,5,'#11131b');
+
+
+ if(activeBiome===2){
+   for(let r=0;r<9;r++){
+     const rx=(r*117+frame*.22)%960, ry=125+(r*53)%190+Math.sin(frame*.025+r)*8;
+     ctx.globalAlpha=.18+.18*(.5+.5*Math.sin(frame*.08+r));
+     ctx.fillStyle='#c5a8f2';ctx.font='10px monospace';ctx.fillText(['✦','◇','∿','✧'][r%4],rx,ry);
+   }
+   ctx.globalAlpha=1;
+ }
+
+ // Cinematic villa lighting: localized pools of warm and eerie light.
+ const lampXs=activeBiome===0?[140,440,740]:activeBiome===1?[120,390,690,900]:[110,360,620,870];
+ for(let li=0;li<lampXs.length;li++){
+   const lx=lampXs[li], ly=activeBiome===2?180:(activeBiome===0?88:100);
+   const flick=.78+.22*Math.sin(frame*.09+li*2.4)+.06*Math.sin(frame*.23+li);
+   const light=ctx.createRadialGradient(lx,ly,4,lx,ly,activeBiome===2?190:165);
+   const tint=activeBiome===0?'255,190,105':(activeBiome===1?'157,232,135':'167,139,255');
+   light.addColorStop(0,`rgba(${tint},${.18*flick})`);
+   light.addColorStop(.45,`rgba(${tint},${.075*flick})`);
+   light.addColorStop(1,'rgba(0,0,0,0)');
+   ctx.fillStyle=light;ctx.fillRect(lx-195,ly-30,390,390);
+ }
+ // Soft vignette keeps the corners mysterious without hiding gameplay.
+ const vignette=ctx.createRadialGradient(480,255,130,480,255,610);
+ vignette.addColorStop(0,'rgba(0,0,0,0)');
+ vignette.addColorStop(1,'rgba(3,3,12,.48)');
+ ctx.fillStyle=vignette;ctx.fillRect(0,0,960,540);
+
+ // Atmospheric depth, soft shafts of light and pixel motes.
+ const sky=ctx.createLinearGradient(0,0,0,540);
+ if(activeBiome===0){sky.addColorStop(0,'#b4a0d018');sky.addColorStop(.55,'#d8b67b08');sky.addColorStop(1,'#09071445');}
+ else{sky.addColorStop(0,'#c8ffb51b');sky.addColorStop(.6,'#8effa00a');sky.addColorStop(1,'#031c1638');}
+ ctx.fillStyle=sky;ctx.fillRect(0,0,960,540);
+ for(let x=80;x<1000;x+=240){
+  const glow=ctx.createRadialGradient(x,108,3,x,108,145);
+  glow.addColorStop(0,activeBiome===0?'#f5d89a30':(activeBiome===1?'#d6ffad30':'#c59aff30'));glow.addColorStop(1,'#ffffff00');
+  ctx.fillStyle=glow;ctx.fillRect(x-145,0,290,320);
+ }
+ for(let i=0;i<34;i++){
+  const x=(i*173+frame*(activeBiome===0?.16:.38))%1000;
+  const y=(i*67+Math.sin(frame*.018+i)*17+40)%330;
+  ctx.globalAlpha=.16+((i%5)/20);rect(x,y,2,2,activeBiome===0?'#f8dfb2':(activeBiome===1?'#d9ffad':'#d8c0ff'));
+ }
+ ctx.globalAlpha=1;
+ const sheen=ctx.createLinearGradient(0,355,0,540);
+ sheen.addColorStop(0,'#ffffff08');sheen.addColorStop(.45,'#ffffff00');sheen.addColorStop(1,'#00000022');
+ ctx.fillStyle=sheen;ctx.fillRect(0,355,960,185);
+}
+
+
+
+
+function drawWallFinish(){
+ if(activeBiome===4||activeBiome===6)return; // outdoor snow garden and tiny start portal have no indoor wall panels.
+
+ // Fine architectural texture across the room walls: varied masonry, worn plaster,
+ // damp marks, hairline cracks, carved trim and ivy rooted at wall joints.
+ for(let x=0;x<960;x+=96){
+   const variant=(Math.floor(x/96)+activeBiome*2)%5;
+   if(activeBiome===0){
+     rect(x+3,110,2,211,'#241d2b');rect(x+8,114,1,202,'#a17a58');
+     rect(x+14,117,68,2,'#80604b');rect(x+14,315,68,2,'#201a27');
+     if(variant===0){rect(x+22,151,2,48,'#8b6a55');rect(x+24,151,16,2,'#9a795d');rect(x+58,238,18,2,'#201927');}
+     if(variant===1){rect(x+18,180,3,2,'#a17d5c');rect(x+20,182,2,24,'#241d2b');rect(x+55,275,21,2,'#a17d5c');}
+     if(variant===2){rect(x+34,137,2,12,'#b28a5e');rect(x+31,149,8,2,'#b28a5e');rect(x+18,290,4,2,'#a17d5c');}
+   }else{
+     const stone=activeBiome===1?'#42644e':(activeBiome===4?'#dcebf0':'#51464b');
+     for(let row=0;row<5;row++){
+       const yy=112+row*42, offset=(row%2)*38;
+       rect(x+offset,yy,92-offset,2,activeBiome===1?'#294b3d':(activeBiome===4?'#f5fbfd':'#302a31'));
+       rect(x+offset+8,yy+4,2,32,activeBiome===1?'#315541':(activeBiome===4?'#b7d1da':'#3a3338'));
+       rect(x+offset+43,yy+8,31,2,stone);
+       rect(x+offset+12,yy+31,21,2,activeBiome===1?'#72906a':'#88766b');
+     }
+     if(variant===0||variant===3){
+       // Moss and fine ivy attached to a wall seam, never suspended in open space.
+       rect(x+8,116,4,70,activeBiome===1?'#285c3d':'#354b38');
+       rect(x+1,139,14,4,'#4b8250');rect(x+8,158,16,4,'#679354');
+       rect(x+4,177,12,4,'#3e7148');
+     }
+     if(variant===1){rect(x+62,170,3,46,'#26232b');rect(x+65,183,17,2,'#8a796d');rect(x+62,216,14,2,'#29252b');}
+     if(variant===2){rect(x+18,250,4,3,'#87906a');rect(x+22,253,3,14,'#293c31');rect(x+25,266,18,2,'#617b54');}
+   }
+ }
+ // Stone base course and carved cornice tie the walls together.
+ rect(0,101,960,5,activeBiome===0?'#b38a5b':(activeBiome===1?'#719578':'#a48a72'));
+ rect(0,326,960,4,activeBiome===0?'#8b6247':(activeBiome===1?'#47744e':'#7c6862'));
+ for(let x=0;x<960;x+=48){rect(x,105,2,220,'#17182118');rect(x+22,327,18,2,'#d4b78a');}
+}
+
+function drawOvergrowth(){
+ // Deliberately empty: no floating decorative objects or plants.
+}
+
+function drawGateWorld(gx){
+ if(gx < -190 || gx > W+190) return;
+ const top=DOOR_TOP, outdoor=activeBiome===4;
+ const stone=outdoor?'#c8dce3':'#765b49';
+ const face=outdoor?'#e8f2f5':'#92745b';
+ const light=outdoor?'#f8ffff':'#c4a078';
+ const dark=outdoor?'#849fab':'#493832';
+ // Solid backing wall directly behind the portal closes the gap above and around the door.
+ // It is limited to the gate's width, so the surrounding room background stays visible.
+ rect(gx-104,0,208,ground,stone);
+ for(let row=0;row<Math.ceil(ground/34);row++){
+  const yy=row*34,offset=(row%2)*26;
+  rect(gx-104,yy,208,3,dark);
+  for(let xx=gx-104-offset;xx<gx+104;xx+=52){
+   rect(xx,yy+4,3,27,dark);
+   rect(xx+7,yy+8,25,2,light);
+   rect(xx+34,yy+22,13,2,face);
+  }
+ }
+ // A compact portal wall only: the rest of the room remains open.
+ // Two substantial carved piers rise on either side of the doorway.
+ for(const side of [-1,1]){
+  const x=gx+(side<0?-92:54);
+  rect(x,top-2,38,ground-top+2,dark);
+  rect(x+4,top+2,30,ground-top-8,stone);
+  rect(x+8,top+4,4,ground-top-12,light);
+  rect(x+27,top+4,3,ground-top-12,dark);
+  for(let yy=top+12;yy<ground-14;yy+=29){
+   rect(x+5,yy,28,3,dark);
+   rect(x+9,yy+5,15,2,face);
+   rect(x+26,yy+9,4,10,light);
+  }
+  // Carved vertical fluting and a small capital at the foot of the arch.
+  rect(x+12,top-5,3,ground-top+3,light);
+  rect(x+22,top-5,2,ground-top+3,face);
+  rect(x-3,top-10,44,8,light);
+  rect(x-5,ground-12,48,9,dark);
+  rect(x-2,ground-10,42,3,face);
+ }
+ // Layered lintel and pointed keystone above the door.
+ rect(gx-103,top-24,206,24,dark);
+ rect(gx-98,top-29,196,8,light);
+ rect(gx-87,top-39,174,10,stone);
+ rect(gx-70,top-48,140,9,face);
+ rect(gx-48,top-57,96,9,light);
+ rect(gx-21,top-67,42,10,dark);
+ rect(gx-10,top-78,20,12,light);
+ rect(gx-5,top-84,10,7,dark);
+ // Individual voussoir blocks create a readable arch around the door.
+ for(let k=0;k<7;k++){
+  const y=top-18-k*6, left=gx-86+k*9, right=gx+77-k*9, w=9;
+  rect(left,y,w,5,face);rect(left+1,y,w-2,1,light);
+  rect(right,y,w,5,face);rect(right+1,y,w-2,1,light);
+ }
+ // Heavy double door with dark oak panels and brass details.
+ rect(gx-50,top,100,ground-top,'#211a20');
+ rect(gx-46,top+4,44,ground-top-8,outdoor?'#506b78':'#593c30');
+ rect(gx+2,top+4,44,ground-top-8,outdoor?'#405b68':'#493329');
+ for(let yy=top+14;yy<ground-10;yy+=24){
+  rect(gx-42,yy,37,3,light);rect(gx+5,yy,37,3,light);
+  rect(gx-38,yy+5,29,2,dark);rect(gx+9,yy+5,29,2,dark);
+ }
+ rect(gx-3,top+5,6,ground-top-10,dark);
+ rect(gx-53,top+8,4,ground-top-15,light);rect(gx+49,top+8,4,ground-top-15,light);
+ for(let yy=top+24;yy<ground-18;yy+=34){
+  rect(gx-39,yy,78,4,dark);rect(gx-38,yy+1,76,1,light);
+  rect(gx-34,yy+6,3,3,light);rect(gx+31,yy+6,3,3,light);
+ }
+ // Gold threshold and restrained rune lights.
+ rect(gx-56,ground-7,112,7,light);rect(gx-49,ground-7,98,2,'#fff0c0');
+ for(const side of [-1,1]){
+  const sx=gx+side*69;
+  rect(sx-3,top+34,6,18,light);rect(sx-7,top+40,14,5,dark);
+  rect(sx-2,top+42,4,2,'#fff0bd');
+ }
+ // A low return wall continues only to the right under the door, not across the room.
+ rect(gx+92,top+60,36,ground-top-60,stone);
+ rect(gx+92,top+60,36,4,dark);
+ for(let yy=top+86;yy<ground-8;yy+=27){
+  rect(gx+92,yy,36,2,dark);rect(gx+100,yy+6,20,2,face);
+ }
+}
+
+function enterCheckpointDoor(){
+ const passedDoor=nextDoorX;
+ activeBiome=gameLevel===2?5:(activeBiome===6?0:(activeBiome+1)%4);
+ unfinishedSignX=(gameLevel===1&&activeBiome===0)?passedDoor+230:0;biomeBanner=240;biomeBannerName=activeBiome===5?'DER LANGE, DUNKLE VILLA-GANG':(gameLevel===2?'DER VERSCHNEITE TOTE GARTEN':['DIE VERFLUCHTE BIBLIOTHEK','BOTANISCHER GARTEN','ALCHEMISTENLABOR','GROSSER FESTSAAL'][activeBiome]);
+ lives=Math.min(6,Math.min(maxLives,lives+1));
+ // The player appears just beyond the threshold. Only now does the new biome exist.
+ p.x=passedDoor+20;p.y=ground-p.h;p.vx=0;p.vy=0;p.on=true;p.inv=42;
+ nextDoorX=passedDoor+BIOME_LENGTH;
+ cam=Math.max(0,p.x-260);
+ platforms=[{x:passedDoor-100,y:ground,w:900,h:100,type:'floor',biome:activeBiome}];
+ stars=[];enemies=[];obstacles=[];enemyShots=[];balls=[];
+ structures=[];decor=[];roomSigns=[];particles=[];boss=null;
+ nextChunk=passedDoor+800;
+ addChunk(Math.floor(nextChunk/600));
+ generateAhead();
+ burst(p.x+12,ground-5,'#e9d39b',18);
+ updateHud();
+}
+
+function drawAtmosphere(){
+ if(activeBiome===4||activeBiome===6)return;
+ // Soft colored pools of light and a subtle dark vignette.
+ ctx.save();
+ const glow=ctx.createRadialGradient(180,135,8,180,135,310);
+ const hue=activeBiome===1?'120,220,150':(activeBiome===2?'174,118,255':(activeBiome===4?'170,220,255':'255,190,110'));
+ glow.addColorStop(0,`rgba(${hue},0.18)`);glow.addColorStop(1,`rgba(${hue},0)`);
+ ctx.fillStyle=glow;ctx.fillRect(0,0,960,540);
+ const glow2=ctx.createRadialGradient(790,240,4,790,240,260);
+ glow2.addColorStop(0,`rgba(${hue},0.13)`);glow2.addColorStop(1,`rgba(${hue},0)`);
+ ctx.fillStyle=glow2;ctx.fillRect(0,0,960,540);
+ // Slow drifting dust, spores, embers or frost motes.
+ for(let i=0;i<32;i++){
+  const x=(i*149+frame*(.18+(i%4)*.07))%960;
+  const y=(i*83+Math.sin(frame*.018+i)*20)%520;
+  const color=activeBiome===2?(i%2?'#ff9a52':'#b8a0ff'):(activeBiome===4?'#eafaff':(activeBiome===1?'#baff9c':'#ffe5a8'));
+  ctx.globalAlpha=.25+.25*Math.sin(frame*.035+i);ctx.fillStyle=color;
+  ctx.shadowColor=color;ctx.shadowBlur=8;ctx.fillRect(x,y,2+(i%2),2+(i%2));
+ }
+ ctx.globalAlpha=1;ctx.shadowBlur=0;
+ // Cinematic vignette.
+ const vignette=ctx.createRadialGradient(480,250,160,480,270,620);
+ vignette.addColorStop(0,'rgba(0,0,0,0)');vignette.addColorStop(1,'rgba(5,9,20,0.42)');
+ ctx.fillStyle=vignette;ctx.fillRect(0,0,960,540);
+ ctx.restore();
+}
+function drawBiomeBanner(){
+ if(biomeBanner<=0||!started)return;
+ const t=biomeBanner/210,alpha=Math.min(1,(210-biomeBanner)/22,biomeBanner/34);
+ ctx.save();ctx.globalAlpha=Math.max(0,alpha);
+ const y=54-(1-t)*13;
+ // Decorative, Valheim-inspired plaque with fine gold lines and ornamental tips.
+ ctx.shadowColor='#000';ctx.shadowBlur=18;
+ ctx.fillStyle='rgba(9,17,25,.78)';ctx.beginPath();
+ ctx.moveTo(210,y);ctx.lineTo(750,y);ctx.lineTo(730,y+58);ctx.lineTo(230,y+58);ctx.closePath();ctx.fill();
+ ctx.shadowBlur=0;ctx.strokeStyle='#c6a66c';ctx.lineWidth=1.5;ctx.stroke();
+ ctx.strokeStyle='#ead7a8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(245,y+9);ctx.lineTo(715,y+9);ctx.moveTo(245,y+49);ctx.lineTo(715,y+49);ctx.stroke();
+ ctx.fillStyle='#e8d7b0';ctx.font='bold 10px Georgia';ctx.textAlign='center';ctx.fillText('✦   EIN NEUES BIOM   ✦',480,y+22);
+ ctx.fillStyle='#fff4d7';ctx.font='bold 23px Georgia';ctx.shadowColor='#f2d59a';ctx.shadowBlur=12;ctx.fillText(biomeBannerName,480,y+43);
+ ctx.restore();ctx.globalAlpha=1;ctx.textAlign='left';
+}
+function draw(){
+ drawRoom();
+ drawWallFinish();
+ drawAtmosphere();
+ ctx.save();ctx.translate(-cam,0);
+ // No room signs; hanging decorations are rendered in the foreground below.
+ // Layered overgrowth is drawn behind platforms and the player.
+
+ // Small development marker at the entrance to the first level.
+ if(gameLevel===1&&activeBiome===0&&unfinishedSignX>0){
+  const sx=unfinishedSignX;
+  // Oak post, braces and a framed signboard.
+  rect(sx-3,ground-95,6,95,'#493329');
+  rect(sx-1,ground-94,2,88,'#b78b5b');
+  rect(sx-66,ground-143,132,50,'#30212a');
+  rect(sx-62,ground-139,124,42,'#79553d');
+  rect(sx-58,ground-135,116,34,'#302632');
+  rect(sx-54,ground-131,108,26,'#493442');
+  for(const dx of [-58,54]){rect(sx+dx,ground-135,4,4,'#e4c47f');rect(sx+dx,ground-105,4,4,'#e4c47f');}
+  ctx.save();ctx.textAlign='center';ctx.font='bold 13px monospace';
+  ctx.fillStyle='#ffe3a1';ctx.shadowColor='#f2c66f';ctx.shadowBlur=6;
+  ctx.fillText('NOCH UNFERTIG',sx,ground-112);
+  ctx.restore();
+ }
+ // draw platforms
+ for(const q of platforms){if(q.x+q.w<cam-20||q.x>cam+W+20)continue;
+  const bi=q.biome??activeBiome;
+  if(q.type==='floor'){
+    if(bi===4){
+      rect(q.x,q.y,q.w,q.h,'#dce8e8');rect(q.x,q.y,q.w,8,'#f8ffff');rect(q.x,q.y+8,q.w,3,'#b7cbd1');
+      for(let xx=q.x+8;xx<q.x+q.w;xx+=54){rect(xx,q.y+18,30,2,'#c2d4d8');rect(xx+14,q.y+37,22,2,'#eaf3f4');}
+      continue;
+    }
+    const palettes=[
+      ['#49313a','#b17b50','#d9b47a','#302331'], // library: walnut and old brass
+      ['#315b43','#75a85c','#a2d47a','#244a3a'], // greenhouse: moss and leaf
+      ['#38313c','#967b60','#c4a36b','#211d2a'], // alchemy: dark stone and brass
+      ['#49312b','#a87848','#e0bd78','#2b2020']  // dining hall: oak and warm gold
+    ][bi]||['#49313a','#b17b50','#d9b47a','#302331'];
+    rect(q.x,q.y,q.w,q.h,palettes[0]);rect(q.x,q.y,q.w,8,palettes[1]);rect(q.x,q.y+8,q.w,3,palettes[2]);rect(q.x,q.y+q.h-8,q.w,8,'#101d25');
+    for(let xx=q.x;xx<q.x+q.w;xx+=46){rect(xx,q.y+12,2,q.h-20,palettes[3]);rect(xx+3,q.y+14,1,q.h-24,'#ffffff10');}
+    // Biome-specific trim along the front edge of the floor.
+    if(bi===1){for(let xx=q.x+12;xx<q.x+q.w;xx+=64){rect(xx,q.y+2,5,9,'#4d9b50');rect(xx+5,q.y+4,9,3,'#8bcf65');rect(xx+9,q.y+1,4,5,'#a9df78');}}
+    if(bi===0){for(let xx=q.x+18;xx<q.x+q.w;xx+=90){rect(xx,q.y+1,18,3,'#e2bd7d');rect(xx+7,q.y+3,3,5,'#6b4634');}}
+    if(bi===2){for(let xx=q.x+20;xx<q.x+q.w;xx+=100){rect(xx,q.y+1,14,3,'#8f7db2');rect(xx+6,q.y+3,3,5,'#5d4b75');}}
+    if(bi===3){for(let xx=q.x+18;xx<q.x+q.w;xx+=90){rect(xx,q.y+1,20,3,'#e6c47b');rect(xx+8,q.y+3,4,5,'#7b4932');}}
+  }
+  else if(q.type==='upper'){
+    const upperPal=[
+      ['#49302d','#bd8a55','#6b4535'],['#28513b','#78b66a','#386c49'],
+      ['#35303d','#b09268','#59475f'],['#50362c','#d1a15e','#70452e']
+    ][bi]||['#49302d','#bd8a55','#6b4535'];
+    rect(q.x,q.y,q.w,q.h,upperPal[0]);rect(q.x,q.y,q.w,5,upperPal[1]);
+    rect(q.x+5,q.y+6,q.w-10,4,upperPal[2]);rect(q.x+7,q.y+q.h-4,q.w-14,3,'#172a39');
+    for(let xx=q.x+14;xx<q.x+q.w-8;xx+=42){rect(xx,q.y+10,3,8,'#172a39');rect(xx+4,q.y+10,17,3,upperPal[1]);}
+    if(bi===1){for(let xx=q.x+12;xx<q.x+q.w-8;xx+=38){rect(xx,q.y-4,5,7,'#4c984e');rect(xx+5,q.y-3,9,3,'#9bd66b');}}
+    if(bi===0){for(let xx=q.x+18;xx<q.x+q.w-8;xx+=46){rect(xx,q.y-5,8,5,'#a64e48');rect(xx+9,q.y-4,8,4,'#d4aa61');}}
+    if(bi===2){for(let xx=q.x+18;xx<q.x+q.w-8;xx+=50){rect(xx,q.y-4,4,5,'#9d87c4');rect(xx+4,q.y-2,8,3,'#65a7a2');}}
+    if(bi===3){for(let xx=q.x+18;xx<q.x+q.w-8;xx+=48){rect(xx,q.y-4,7,4,'#e2c17c');rect(xx+8,q.y-3,8,3,'#9c5e3a');}}
+    rect(q.x+2,q.y-2,5,3,upperPal[1]);rect(q.x+q.w-7,q.y-2,5,3,upperPal[1]);
+  }
+  else if(q.type==='stair'){
+    const stairPal=[
+      ['#684632','#c08a50','#dfc18a','#39252b'],['#315f43','#75b765','#b4df83','#234b37'],
+      ['#4c4148','#b08a62','#d3b77e','#29232d'],['#68432f','#c18b50','#f0ce84','#39251f']
+    ][bi]||['#5d7180','#c1d9df','#9db7bd','#26394a'];
+    rect(q.x,q.y,q.w,q.h,stairPal[0]);rect(q.x,q.y,q.w,5,stairPal[1]);
+    rect(q.x+5,q.y+q.h,q.w-10,4,stairPal[3]);
+    for(let xx=q.x+12;xx<q.x+q.w-8;xx+=24){rect(xx,q.y+7,2,5,stairPal[2]);}
+    // Small themed surface details: leaves, book spines, runes or banquet inlays.
+    if(bi===1){for(let xx=q.x+9;xx<q.x+q.w-8;xx+=27){rect(xx,q.y-3,5,4,'#4d9c50');rect(xx+5,q.y-2,7,3,'#91d46a');}}
+    if(bi===0){for(let xx=q.x+10;xx<q.x+q.w-10;xx+=28){rect(xx,q.y-4,5,4,'#a84e45');rect(xx+6,q.y-3,5,3,'#d5a65b');}}
+    if(bi===2){for(let xx=q.x+10;xx<q.x+q.w-10;xx+=30){rect(xx,q.y-3,4,3,'#a78bd6');rect(xx+5,q.y-2,7,2,'#7ac7c0');}}
+    if(bi===3){for(let xx=q.x+10;xx<q.x+q.w-10;xx+=28){rect(xx,q.y-3,8,3,'#e6c47b');rect(xx+9,q.y-2,5,2,'#a35d3a');}}
+  }
+  else{rect(q.x,q.y,q.w,q.h,'#b99b70');rect(q.x,q.y,q.w,7,'#e1c69a');rect(q.x+8,q.y+q.h,q.w-16,5,'#4b4239')}
+ }
+
+ // Wall-mounted set dressing: shelves, framed maps, lanterns, stained glass,
+ // pipes, cabinets and signs. These details sit behind the playable route.
+ if(false)  for(const d of decor){
+   if(d.x<cam-130||d.x>cam+W+130)continue;
+   const x=d.x, y=112+(d.layer||0)*72, b=d.biome, k=d.kind;
+   if(b===0){
+     if(k%6===0){rect(x,y,64,5,'#553b2d');rect(x+3,y-27,58,24,'#7e5039');for(let n=0;n<4;n++){rect(x+7+n*13,y-24,9,19,['#a34d42','#c39a53','#466f7c','#5b4a75'][n]);rect(x+9+n*13,y-20,2,11,'#e1c28a');}}
+     else if(k%6===1){rect(x,y-34,42,38,'#594638');rect(x+4,y-30,34,30,'#c5a875');rect(x+8,y-26,26,22,'#66747a');rect(x+19,y-23,5,14,'#e0c48b');}
+     else if(k%6===2){rect(x+14,y-42,4,43,'#9b754a');rect(x+3,y-3,28,4,'#b58a54');rect(x+8,y-36,17,27,'#f0c878');rect(x+11,y-32,11,19,'#fff0b0');}
+     else if(k%6===3){rect(x,y-22,56,21,'#4b3c36');rect(x+5,y-18,46,13,'#d7c49d');rect(x+10,y-15,14,2,'#8e7558');rect(x+10,y-11,31,2,'#8e7558');}
+     else if(k%6===4){rect(x,y-3,54,4,'#614b3a');rect(x+6,y-30,40,26,'#8e6b4a');rect(x+10,y-26,32,18,'#c7ae80');rect(x+17,y-22,18,10,'#6c526b');}
+     else{rect(x+8,y-28,4,28,'#8d704d');rect(x+43,y-28,4,28,'#8d704d');rect(x+8,y-28,39,3,'#b38c5b');rect(x+8,y-3,39,3,'#b38c5b');}
+   }else if(b===1){
+     if(k%4===0){rect(x,y-38,68,42,'#315747');rect(x+5,y-33,58,32,'#86b6a0');rect(x+9,y-29,22,24,'#c5dfc4');rect(x+37,y-29,22,24,'#a7d0b9');}
+     else if(k%4===1){rect(x+4,y-3,52,4,'#5e7656');rect(x+8,y-28,44,24,'#405e4a');rect(x+12,y-24,36,16,'#8aab7e');rect(x+25,y-34,10,8,'#d9c08a');}
+     else if(k%4===2){rect(x+12,y-34,4,34,'#8c7955');rect(x+5,y-4,24,4,'#c5ad7c');rect(x+8,y-29,18,21,'#9eb7a0');rect(x+14,y-25,7,13,'#d7e4c9');}
+     else{rect(x,y-28,56,4,'#3d604b');rect(x+6,y-24,3,22,'#73916a');rect(x+47,y-24,3,22,'#73916a');rect(x+9,y-7,38,4,'#3d604b');}
+   }else if(b===3){
+     if(k%2===0){rect(x,y-40,60,38,'#56352d');rect(x+4,y-36,52,30,'#b58a54');rect(x+10,y-30,40,20,'#783d37');rect(x+24,y-27,12,15,'#e2c17b');}
+     else{rect(x+8,y-34,5,34,'#8a6a45');rect(x+1,y-4,27,4,'#c49a62');rect(x+4,y-31,18,22,'#e28a3b');rect(x+9,y-35,10,8,'#ffd47c');}
+   }else{
+     if(k%4===0){rect(x,y-32,60,4,'#9d8057');rect(x+5,y-28,4,26,'#6b5b51');rect(x+50,y-28,4,26,'#6b5b51');rect(x+8,y-24,43,3,'#c1a16a');}
+     else if(k%4===1){rect(x+8,y-34,40,32,'#51414b');rect(x+12,y-30,32,24,'#9a7c9b');rect(x+18,y-25,20,15,'#d1c0dc');}
+     else if(k%4===2){rect(x+6,y-26,48,4,'#9d8057');rect(x+12,y-22,4,19,'#b28b5c');rect(x+43,y-22,4,19,'#b28b5c');rect(x+17,y-17,25,9,'#4c6670');}
+     else{rect(x+8,y-34,42,4,'#a78b5d');rect(x+12,y-30,3,27,'#66534a');rect(x+44,y-30,3,27,'#66534a');rect(x+16,y-22,27,3,'#bca06c');}
+   }
+ }
+
+ // Carved sandstone archways instead of the old flat grey passage blocks.
+ if(activeBiome!==4){
+  for(const st of structures){
+   if(st.x+st.w<cam-30||st.x>cam+W+30)continue;
+   const x=st.x,w=st.w,top=st.top;
+   rect(x,0,w,top,'#715746');rect(x+5,0,w-10,top,'#92745b');
+   rect(x+10,0,5,top,'#c09a73');rect(x+w-15,0,5,top,'#4c3932');
+   for(let yy=18;yy<top-8;yy+=28){
+    rect(x+8,yy,w-16,2,'#493832');
+    rect(x+12,yy+4,Math.max(10,w*.35),2,'#c09a73');
+    rect(x+w*.58,yy+5,Math.max(8,w*.25),2,'#a98462');
+   }
+   rect(x-12,top-8,w+24,9,'#4c3932');rect(x-9,top-13,w+18,5,'#c09a73');
+   rect(x-4,top-18,w+8,5,'#80614c');
+   if(st.kind==='tall'){rect(x+8,top-32,5,19,'#c09a73');rect(x+w-13,top-32,5,19,'#c09a73');}
+  }
+ }
+ // stars
+ for(const s of stars)if(!s.got){const pulse=9+Math.sin(frame/9+s.x)*1.5;ctx.globalAlpha=.22;ctx.fillStyle='#ffd66c';ctx.beginPath();ctx.arc(s.x,s.y,pulse*2.1,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.fillStyle='#ffd66c';ctx.beginPath();ctx.arc(s.x,s.y,pulse,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff4bc';ctx.fillRect(s.x-2,s.y-6,4,12);ctx.fillStyle='#fff';ctx.fillRect(s.x-1,s.y-4,2,5)}
+ // Library: book monsters. Greenhouse: plant monsters. Alchemy: fire and multicolored light spirits.
+ for(const e of enemies)if(e.alive){
+   if(e.windowSentry){
+     rect(e.x-7,e.y-8,62,74,'#30252a');rect(e.x-3,e.y-4,54,66,'#100f1a');
+     rect(e.x+3,e.y+5,42,52,'#3d2d39');rect(e.x+9,e.y+13,30,34,'#171522');
+     rect(e.x+13,e.y+20,7,5,'#ffcf72');rect(e.x+29,e.y+20,7,5,'#ffcf72');
+     rect(e.x+15,e.y+21,3,3,'#fff7ce');rect(e.x+31,e.y+21,3,3,'#fff7ce');
+     rect(e.x+18,e.y+36,16,3,'#9a5460');rect(e.x+21,e.y+39,4,3,'#e2c5a4');rect(e.x+29,e.y+39,4,3,'#e2c5a4');
+     rect(e.x+4,e.y-2,4,66,'#8b8b91');rect(e.x+44,e.y-2,4,66,'#8b8b91');
+     for(let gy=8;gy<62;gy+=13)rect(e.x+4,e.y+gy,44,3,'#a7a2a0');
+     rect(e.x+24,e.y-2,4,66,'#77777f');
+     rect(e.x-8,e.y-11,64,5,'#b18a60');rect(e.x-8,e.y+62,64,5,'#4c3732');
+   }else if(e.kind===6){
+     // Silent frozen tree sentinel: rooted in snow, pale bark and icy branches.
+     rect(e.x+23,e.y+30,13,45,'#dcecf2');rect(e.x+19,e.y+43,21,7,'#b9d4df');
+     rect(e.x+5,e.y+26,48,8,'#effaff');rect(e.x+12,e.y+12,34,9,'#e8f7fc');
+     rect(e.x+18,e.y+1,22,12,'#f8ffff');rect(e.x+7,e.y+19,10,23,'#d6eaf2');
+     rect(e.x+41,e.y+18,10,25,'#d6eaf2');rect(e.x+27,e.y+5,5,20,'#a8cbd9');
+     rect(e.x+27,e.y+52,5,20,'#b5d1dc');
+     ctx.globalAlpha=.5;ctx.fillStyle='#8cecff';ctx.beginPath();ctx.arc(e.x+29,e.y+27,34+Math.sin(frame*.1)*3,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+   }else if(e.kind===1){
+     ctx.fillStyle='#8b73d9';ctx.beginPath();ctx.arc(e.x+17,e.y+14,16,Math.PI,0);ctx.lineTo(e.x+34,e.y+29);ctx.quadraticCurveTo(e.x+26,e.y+23,e.x+19,e.y+31);ctx.quadraticCurveTo(e.x+10,e.y+23,e.x,e.y+30);ctx.closePath();ctx.fill();
+     rect(e.x+8,e.y+10,5,5,'#fff2a6');rect(e.x+23,e.y+10,5,5,'#fff2a6');rect(e.x+12,e.y+20,12,3,'#362a60');
+     rect(e.x+13,e.y+30,5,9,'#a99aff');rect(e.x+22,e.y+29,5,8,'#786ac4');
+   }else if(e.kind===0){
+     rect(e.x+4,e.y+8,26,27,'#252b3c');rect(e.x+8,e.y+2,18,13,'#3c4560');rect(e.x+9,e.y+12,5,5,'#c7f4ff');rect(e.x+22,e.y+12,5,5,'#c7f4ff');
+     rect(e.x+7,e.y+34,6,7,'#181c2a');rect(e.x+23,e.y+34,6,7,'#181c2a');
+   }else if(e.kind===3){
+     // Ranged venus-flytrap: glowing seed pod and open jaws.
+     rect(e.x+13,e.y+12,12,24,'#367b42');rect(e.x+7,e.y+5,24,20,'#4e9c49');
+     rect(e.x+5,e.y+1,13,12,'#9ee36c');rect(e.x+19,e.y+1,13,12,'#80cf58');
+     rect(e.x+9,e.y+13,5,5,'#fff2a6');rect(e.x+23,e.y+13,5,5,'#fff2a6');
+     rect(e.x+9,e.y+24,20,4,'#203c2b');rect(e.x+7,e.y+28,5,10,'#5caa4c');rect(e.x+26,e.y+28,5,10,'#5caa4c');
+     rect(e.x+1,e.y+32,9,4,'#7ac65a');rect(e.x+29,e.y+32,9,4,'#7ac65a');
+   }else if(e.kind===4){
+     // Fire spirit with a bright, flickering flame core.
+     const flick=Math.sin(frame*.22+e.phase)*3;
+     ctx.fillStyle='#c63d25';ctx.beginPath();ctx.moveTo(e.x+19,e.y+36);ctx.quadraticCurveTo(e.x-2,e.y+22,e.x+9,e.y+7+flick);ctx.quadraticCurveTo(e.x+11,e.y+15,e.x+19,e.y);ctx.quadraticCurveTo(e.x+32,e.y+12+flick,e.x+34,e.y+4);ctx.quadraticCurveTo(e.x+49,e.y+27,e.x+19,e.y+36);ctx.fill();
+     ctx.fillStyle='#ff9a32';ctx.beginPath();ctx.moveTo(e.x+19,e.y+31);ctx.quadraticCurveTo(e.x+7,e.y+19,e.x+19,e.y+9);ctx.quadraticCurveTo(e.x+32,e.y+19,e.x+19,e.y+31);ctx.fill();
+     rect(e.x+12,e.y+16,4,5,'#fff6c9');rect(e.x+24,e.y+16,4,5,'#fff6c9');rect(e.x+16,e.y+25,12,3,'#762b25');
+   }else if(e.kind===5){
+     // Floating light spirit; four color families.
+     const colors=[['#65e9ff','#d8fbff'],['#ffe16a','#fff9d1'],['#c69aff','#f1ddff'],['#ff91c8','#ffe2f1']];
+     const palette=colors[Math.floor(e.phase)%colors.length],pulse=2+Math.sin(frame*.16+e.phase)*2;
+     ctx.globalAlpha=.24;ctx.fillStyle=palette[0];ctx.beginPath();ctx.arc(e.x+19,e.y+18,23+pulse,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+     ctx.fillStyle=palette[0];ctx.beginPath();ctx.arc(e.x+19,e.y+18,15+pulse*.35,0,Math.PI*2);ctx.fill();
+     rect(e.x+12,e.y+13,4,5,'#fff');rect(e.x+23,e.y+13,4,5,'#fff');rect(e.x+14,e.y+22,12,3,'#4a4568');
+     for(let q=0;q<4;q++){const ang=frame*.035+q*Math.PI/2;rect(e.x+19+Math.cos(ang)*22,e.y+18+Math.sin(ang)*22,3,3,palette[1]);}
+   }else{
+     // Low plant crawler with leaf armor.
+     rect(e.x+4,e.y+10,33,20,'#397b42');rect(e.x+8,e.y+3,10,13,'#65b755');rect(e.x+24,e.y+2,10,13,'#8bd268');
+     rect(e.x+11,e.y+14,5,5,'#fff2a6');rect(e.x+27,e.y+14,5,5,'#fff2a6');rect(e.x+14,e.y+23,16,4,'#244b35');
+     rect(e.x+2,e.y+29,10,5,'#285936');rect(e.x+31,e.y+29,10,5,'#285936');
+   }
+ }
+ // Frozen enemies shimmer inside an icy magical seal.
+ for(const e of enemies)if(e.alive&&e.frozen>0){
+  ctx.globalAlpha=.45;ctx.strokeStyle='#9cecff';ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(e.x+e.w/2,e.y+e.h/2,Math.max(e.w,e.h)*.62+Math.sin(frame*.15)*2,0,Math.PI*2);ctx.stroke();
+  ctx.globalAlpha=1;rect(e.x+e.w/2-2,e.y-7,4,4,'#e9fcff');
+ }
+ // Mini-boss: the Banquet Knight, an armored roast-chef with a cleaver.
+ if(boss&&boss.alive&&boss.x>cam-130&&boss.x<cam+W+130){
+   const bx=boss.x,by=boss.y;
+   rect(bx+12,by+24,62,67,'#38252a');rect(bx+18,by+14,50,53,'#9a6942');rect(bx+13,by+31,14,22,'#d8b66f');rect(bx+59,by+30,15,23,'#d8b66f');
+   rect(bx+22,by+5,42,25,'#e0c9a0');rect(bx+26,by+11,34,13,'#6b4032');
+   rect(bx+30,by+15,7,6,'#fff0b0');rect(bx+51,by+15,7,6,'#fff0b0');
+   rect(bx+32,by+17,3,3,'#261b1b');rect(bx+53,by+17,3,3,'#261b1b');
+   rect(bx+28,by+34,37,26,'#6c3540');rect(bx+34,by+38,25,17,'#d2b16c');
+   rect(bx+8,by+40,15,33,'#b47a4d');rect(bx+67,by+38,15,34,'#b47a4d');
+   rect(bx+72,by+29,7,27,'#8b8d94');rect(bx+76,by+25,18,17,'#c7c9c8');rect(bx+79,by+28,12,3,'#fff1c5');
+   rect(bx+15,by+89,23,12,'#24222a');rect(bx+48,by+89,23,12,'#24222a');
+   if(boss.flash>0&&Math.floor(frame/2)%2===0)rect(bx+8,by+4,80,98,'#fff4c8');
+   rect(bx-13,by-24,112,10,'#241a1a');rect(bx-11,by-22,108*boss.hp/boss.maxHp,6,'#e05c43');
+   ctx.fillStyle='#fff0d1';ctx.font='bold 10px monospace';ctx.fillText('BANKETT-RITTER',bx-15,by-30);
+ }
+ // Frostbolts from the silent frozen trees.
+ for(const b of enemyShots)if(b.kind==='ice'){
+   const x=b.x-cam;ctx.globalAlpha=.85;ctx.fillStyle='#9cecff';ctx.beginPath();ctx.arc(x+b.w/2,b.y+b.h/2,12,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+   rect(x+4,b.y+4,7,7,'#fff');rect(x+8,b.y+2,3,13,'#e8fcff');rect(x+2,b.y+7,14,3,'#e8fcff');
+ }
+ // Leuchtende Zaubertränke zum Einsammeln.
+ for(const q of potions){if(q.got||q.x<cam-50||q.x>cam+W+50)continue;
+   const bob=Math.sin(frame*.09+q.bob)*4, x=q.x-cam, y=q.y+bob;
+   const pulse=1+Math.sin(frame*.16+q.bob)*.28;
+   ctx.save();ctx.shadowBlur=28*pulse;ctx.shadowColor='#36eaff';
+   ctx.globalAlpha=.42;ctx.fillStyle='#42eaff';ctx.beginPath();ctx.arc(x+14,y+17,27*pulse,0,Math.PI*2);ctx.fill();
+   ctx.globalAlpha=1;ctx.fillStyle='#d9faff';ctx.fillRect(x+10,y,x+9,7);
+   ctx.fillStyle='#23cce9';ctx.fillRect(x+6,y+7,17,23);
+   ctx.fillStyle='#a9ffff';ctx.fillRect(x+9,y+11,11,12);ctx.fillStyle='#fff';ctx.fillRect(x+9,y+9,4,5);
+   ctx.fillStyle='#eafcff';ctx.font='bold 12px monospace';ctx.fillText('✦',x+9,y-7);
+   ctx.fillStyle='#bffaff';ctx.fillRect(x+1,y+13,3,3);ctx.fillRect(x+24,y+5,3,3);ctx.fillRect(x+23,y+25,3,3);
+   ctx.restore();
+ }
+ // Pink heart-shaped life upgrades.
+ for(const q of hearts){if(q.got||q.x<cam-50||q.x>cam+W+50)continue;
+   const x=q.x-cam,y=q.y+Math.sin(frame*.08+q.phase)*4;
+   ctx.globalAlpha=.25;ctx.fillStyle='#ff6cae';ctx.beginPath();ctx.arc(x+13,y+13,23,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+   ctx.fillStyle='#ff4f91';ctx.beginPath();ctx.moveTo(x+13,y+27);ctx.bezierCurveTo(x-7,y+13,x+1,y-1,x+13,y+9);ctx.bezierCurveTo(x+25,y-1,x+34,y+13,x+13,y+27);ctx.fill();
+   rect(x+8,y+8,4,4,'#ffd9e8');rect(x+18,y+8,4,4,'#ffd9e8');
+ }
+ // Enemy projectiles: violet ectoplasm or glowing green seeds.
+ for(const shot of enemyShots){
+   ctx.fillStyle=shot.kind==='window'?'#d98bff':(shot.kind==='plant'?'#b5f26c':(shot.kind==='fire'?'#ff713d':(shot.kind==='light'?'#ffe58b':(shot.kind==='feast'?'#b96a37':'#c9a8ff'))));
+   ctx.beginPath();ctx.arc(shot.x+shot.w/2,shot.y+shot.h/2,shot.w/2,0,Math.PI*2);ctx.fill();
+   ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(shot.x+shot.w/2,shot.y+shot.h/2,shot.w*.95,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ }
+ // Jump and landing particles.
+ for(const q of particles){ctx.globalAlpha=Math.max(0,q.life/q.max);rect(q.x,q.y,q.size,q.size,q.color);ctx.globalAlpha=1;}
+ // Thrown glowing balls.
+ for(const b of balls){
+  const col=b.magicColor||'#ffd45e',core=b.coreColor||'#fff4bb',cx=b.x+b.w/2,cy=b.y+b.h/2;
+  ctx.globalAlpha=.3;ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx,cy,b.w*.95,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  ctx.fillStyle=col;ctx.beginPath();
+  if(b.magicType==='hex'){ctx.moveTo(cx,cy-b.h*.58);ctx.lineTo(cx+b.w*.58,cy);ctx.lineTo(cx,cy+b.h*.58);ctx.lineTo(cx-b.w*.58,cy);ctx.closePath();}
+  else ctx.arc(cx,cy,b.w*.42,0,Math.PI*2);
+  ctx.fill();ctx.fillStyle=core;ctx.beginPath();ctx.arc(cx-2,cy-2,Math.max(3,b.w*.16),0,Math.PI*2);ctx.fill();
+  rect(cx-1,cy-b.h*.72,2,4,'#fff');rect(cx-b.w*.65,cy-1,4,2,'#fff');
+ }
+
+ // More expressive, animated pixel-art student sprites.
+ const h=heroes[chosen],sk=skins[chosen][chosenSkin]||skins[chosen][0],px=Math.round(p.x),py=Math.round(p.y);
+ ctx.globalAlpha=.18;ctx.fillStyle=sk.robe;ctx.beginPath();ctx.ellipse(px+15,py+27,25,34,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ const airborne=!p.on,walking=Math.abs(p.vx)>0.25&&p.on;
+ const runPhase=frame*.72,step=walking?Math.sin(runPhase)*5:0;
+ const jumpPose=airborne?Math.max(0,Math.min(1,(-p.vy+1)/12)):0;
+ const bodyBob=walking?Math.abs(Math.sin(runPhase))*2.2:airborne?-2:0;
+ // Soft shadow changes size while airborne.
+ ctx.globalAlpha=airborne?.35:0.55;ctx.fillStyle='#081521';ctx.beginPath();ctx.ellipse(px+15,py+57,airborne?10:17,airborne?2:4,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ rect(px+3,py+22+bodyBob,8,23,sk.pants);rect(px+4,py+25+bodyBob,6,15,sk.pants);rect(px+6,py+22+bodyBob,3,20,'#d5b66d');
+ if(airborne){rect(px+7,py+41+bodyBob,8,10,'#263044');rect(px+18,py+39+bodyBob,8,10,'#263044');rect(px+3,py+49+bodyBob,12,5,'#e3d1b5');rect(px+17,py+47+bodyBob,12,5,'#e3d1b5');}
+ else{rect(px+8,py+42+bodyBob,7,12+Math.max(0,step),sk.pants);rect(px+18,py+42+bodyBob,7,12+Math.max(0,-step),sk.pants);rect(px+5+Math.max(0,step),py+53+bodyBob,12,5,'#e3d1b5');rect(px+17+Math.max(0,-step),py+53+bodyBob,13,5,'#e3d1b5');}
+ rect(px+6,py+55,12,2,'#9e7957');rect(px+18,py+55,12,2,'#9e7957');
+ // Torso outline, jacket and shirt
+ rect(px+5,py+19+bodyBob,22,27,'#17283a');rect(px+7,py+20+bodyBob,18,25,sk.robe);
+ rect(px+10,py+20+bodyBob,12,5,'#f2e9dc');rect(px+14,py+24+bodyBob,4,15,'#e7d8bd');
+ rect(px+7,py+28+bodyBob,4,12,'#ffffff22');rect(px+22,py+27+bodyBob,3,13,'#182d45');
+ const armSwing=walking?Math.round(Math.sin(runPhase)*5):0,lift=airborne?Math.round(3+jumpPose*2):0;
+ rect(px+2,py+24+bodyBob+armSwing-lift,6,15,sk.skin);rect(px+26,py+24+bodyBob-armSwing-lift,6,15,sk.skin);
+ rect(px+2,py+37+bodyBob+armSwing-lift,6,5,'#d9a77d');rect(px+26,py+37+bodyBob-armSwing-lift,6,5,'#d9a77d');
+ // Neck, ears and face
+ rect(px+13,py+15+bodyBob,7,7,h.color);rect(px+7,py+5+bodyBob,19,17,'#17212d');
+ rect(px+8,py+5+bodyBob,17,16,h.color);rect(px+5,py+10+bodyBob,4,7,h.color);rect(px+25,py+10+bodyBob,4,7,h.color);
+ // Hair silhouettes and highlights differ between characters
+ if(chosen===0){
+   rect(px+6,py+2+bodyBob,21,8,'#39251f');rect(px+5,py+5+bodyBob,6,11,'#39251f');rect(px+22,py+5+bodyBob,5,8,'#39251f');
+   rect(px+9,py+1+bodyBob,10,3,'#76503a');rect(px+19,py+4+bodyBob,5,3,'#5b3a2b');
+ }else{
+   rect(px+6,py+2+bodyBob,21,7,'#30212b');rect(px+5,py+6+bodyBob,6,17,'#30212b');rect(px+23,py+6+bodyBob,5,17,'#30212b');
+   rect(px+9,py+1+bodyBob,13,3,'#80515d');rect(px+7,py+14+bodyBob,3,7,'#583746');
+ }
+ // Pointed witch / wizard hat, with different silhouette and trim.
+ if(chosen===0){
+   rect(px+4,py+4+bodyBob,25,4,sk.hat);rect(px+9,py-5+bodyBob,16,10,sk.hat);
+   rect(px+13,py-13+bodyBob,9,10,sk.hat);rect(px+16,py-17+bodyBob,7,6,sk.hat);
+   rect(px+9,py+2+bodyBob,14,2,sk.trim);
+ }else{
+   rect(px+3,py+4+bodyBob,27,4,sk.hat);rect(px+8,py-6+bodyBob,18,10,sk.hat);
+   rect(px+13,py-14+bodyBob,10,10,sk.hat);rect(px+18,py-19+bodyBob,7,7,sk.hat);
+   rect(px+9,py+2+bodyBob,15,2,sk.trim);
+ }
+ // Eyes, eyebrows, nose and smile
+ rect(px+11,py+11+bodyBob,4,3,'#20212a');rect(px+20,py+11+bodyBob,4,3,'#20212a');
+ rect(px+12,py+11+bodyBob,1,1,'#ffffff');rect(px+21,py+11+bodyBob,1,1,'#ffffff');
+ rect(px+11,py+9+bodyBob,5,1,'#49302b');rect(px+20,py+9+bodyBob,5,1,'#49302b');
+ rect(px+17,py+14+bodyBob,2,2,'#bd825f');rect(px+15,py+18+bodyBob,6,1,'#914c4b');
+ // Tiny badge on the jacket
+ rect(px+21,py+29+bodyBob,3,4,'#f4d36d');rect(px+22,py+30+bodyBob,1,2,'#fff3b0');
+ // The selected weapon is visible in the character's hand.
+ const handX=px+(p.face>0?27:3),handY=py+31+bodyBob;
+ if(weaponChoice==='sword'){
+  const bladeX=handX+p.face*14,bladeY=handY-17;
+  ctx.save();ctx.lineCap='square';
+  ctx.strokeStyle='#49302b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(handX,handY);ctx.lineTo(handX+p.face*8,handY-7);ctx.stroke();
+  ctx.strokeStyle='#c08a4b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(handX+p.face*5,handY-4);ctx.lineTo(handX+p.face*11,handY-10);ctx.stroke();
+  ctx.strokeStyle='#dce8f1';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(bladeX,bladeY);ctx.lineTo(bladeX+p.face*15,bladeY-25);ctx.stroke();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(bladeX+p.face*2,bladeY-3);ctx.lineTo(bladeX+p.face*16,bladeY-26);ctx.stroke();
+  if(swordFlash>0){ctx.globalAlpha=Math.min(1,swordFlash/5);ctx.strokeStyle='#fff0bd';ctx.lineWidth=5;ctx.beginPath();ctx.arc(px+15+p.face*12,py+27,30,-.95,.95);ctx.stroke();ctx.globalAlpha=1;}
+  ctx.restore();
+ }else{
+  const wandTipX=handX+p.face*13,wandTipY=handY-14;
+  ctx.save();ctx.lineCap='round';
+  ctx.strokeStyle='#49302b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(handX,handY);ctx.lineTo(wandTipX,wandTipY);ctx.stroke();
+  ctx.strokeStyle=sk.trim;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(handX+1,handY-2);ctx.lineTo(wandTipX,wandTipY+1);ctx.stroke();
+  ctx.fillStyle=sk.trim;ctx.beginPath();ctx.arc(wandTipX,wandTipY,chosen===0?4:3.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff7cf';ctx.beginPath();ctx.arc(wandTipX,wandTipY,1.5,0,Math.PI*2);ctx.fill();
+  if(castFlash>0){ctx.globalAlpha=Math.min(1,castFlash/5);ctx.strokeStyle=sk.trim;ctx.lineWidth=2;ctx.beginPath();ctx.arc(wandTipX,wandTipY,7+(12-castFlash)*1.2,0,Math.PI*2);ctx.stroke();ctx.fillStyle=sk.trim;ctx.fillRect(wandTipX-8,wandTipY-1,4,2);ctx.fillRect(wandTipX+4,wandTipY-1,4,2);}
+  ctx.restore();
+ }
+
+
+ if(p.inv>0&&Math.floor(frame/4)%2===0){ctx.globalAlpha=.35}
+ // Foreground decorations: these hang in front of the room and overlap the play scene.
+ if(activeBiome!==4 && activeBiome!==6){
+  for(let j=0;j<4;j++){
+   const wx=cam+115+j*310;
+   if(wx>cam+W+50)continue;
+   if(activeBiome===1){
+    // Hanging baskets and long leafy vines in the foreground.
+    rect(wx,0,4,48,'#654a32');rect(wx-18,44,40,7,'#8a6340');
+    rect(wx-14,50,32,15,'#315b43');rect(wx-10,53,24,9,'#6e9d53');
+    for(let v=0;v<4;v++){
+     const vx=wx-12+v*9,drop=34+(v%3)*17+Math.sin(frame*.035+v+j)*5;
+     rect(vx,64,3,drop,'#326d42');
+     rect(vx-7,78+drop*.35,10,4,'#77b957');rect(vx+2,92+drop*.55,9,4,'#9ad66c');
+     rect(vx-5,108+drop*.7,7,4,'#4e914b');
+    }
+    rect(wx-25,76,9,4,'#a4d96e');rect(wx+18,91,10,4,'#85c75e');
+   }else{
+    // Large hanging chandelier in the foreground.
+    const cy=70+(j%2)*18;
+    rect(wx,0,4,cy,'#795a3d');rect(wx-34,cy,72,6,'#c19a62');
+    rect(wx-27,cy+5,5,19,'#b98b55');rect(wx+23,cy+5,5,19,'#b98b55');
+    rect(wx-9,cy+6,5,17,'#d0ad6d');rect(wx+5,cy+6,5,17,'#d0ad6d');
+    rect(wx-31,cy+23,12,4,'#765237');rect(wx+19,cy+23,12,4,'#765237');
+    rect(wx-27,cy-5,9,7,'#ffe5a1');rect(wx+22,cy-5,9,7,'#ffe5a1');
+    rect(wx-8,cy-8,22,8,'#e5c17c');rect(wx-4,cy-19,6,12,'#fff1b5');rect(wx+6,cy-17,5,10,'#fff1b5');
+    ctx.globalAlpha=.22;ctx.fillStyle='#ffd77d';ctx.beginPath();ctx.arc(wx,cy+5,48,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+   }
+  }
+ }
+ ctx.restore();
+ // The sealed stone wall and door are the foremost world object: nothing beyond can show through.
+ drawGateWorld(nextDoorX-cam);
+ // foreground shadow vignette
+ const vg=ctx.createRadialGradient(480,250,150,480,250,620);vg.addColorStop(0,'#0000');vg.addColorStop(1,'#070d16aa');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+ // tiny objective
+ ctx.fillStyle='#fff';ctx.font='bold 15px system-ui';ctx.fillText(activeBiome===6?'EINGANGSPORTAL':(activeBiome===5?'LEVEL 2 · VILLA-GANG':(gameLevel===2?'LEVEL 2 · TOTER GARTEN':(['BIBLIOTHEK','BOTANISCHER GARTEN','ALCHEMISTENLABOR','FESTSAAL'][activeBiome]||'VILLA'))),18,30);
+ if(potionTimer>0){ctx.fillStyle='#071a25cc';ctx.fillRect(690,42,250,30);ctx.fillStyle='#8df6ff';ctx.font='bold 13px system-ui';ctx.fillText('🧪 SCHUTZSCHILD '+Math.ceil(potionTimer/60)+'s',700,62);}
+ drawBiomeBanner();
+ if(paused){ctx.fillStyle='#07111dcc';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='900 42px system-ui';ctx.fillText('PAUSE',W/2,H/2);ctx.font='16px system-ui';ctx.fillText('ESC drücken zum Weiterspielen',W/2,H/2+34);ctx.textAlign='left';}
+}
+function collide(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function hurt(){if(potionTimer>0||p.inv>0)return;lives--;p.inv=72;p.vy=-5;p.vx=-p.face*2.4;updateHud();if(lives<=0){end(false)}}
+
+function levelComplete(){
+ saveHighScore();started=false;hud.style.display='none';overlay.style.display='grid';
+ panel.innerHTML=`<h1>LEVEL 1 GESCHAFFT!</h1><div style="font-size:64px">🏆</div>
+ <p class="sub">Du hast den Bankett-Ritter besiegt und die Villa-Etappe abgeschlossen!</p>
+ <p style="color:#ffd66c;font-weight:900">LEVEL 2 wartet: DER VERSCHNEITE TOTE GARTEN</p>
+ <button id="nextLevel">LEVEL 2 STARTEN ▶</button>`;
+ document.getElementById('nextLevel').onclick=startLevelTwo;
+}
+function startLevelTwo(){
+ gameLevel=2;activeBiome=4;world=4;cam=0;biomeBanner=240;biomeBannerName='DER VERSCHNEITE TOTE GARTEN';nextDoorX=BIOME_LENGTH;
+ p={x:150,y:ground-52,w:30,h:52,vx:0,vy:0,on:false,inv:90,face:1};
+ lives=Math.min(6,maxLives);unfinishedSignX=0;castFlash=0;balls=[];enemyShots=[];potions=[];hearts=[];potionTimer=0;particles=[];throwCooldown=0;wasOnGround=false;
+ buildLevel();updateHud();overlay.style.display='none';hud.style.display='flex';started=true;paused=false;last=performance.now();requestAnimationFrame(loop);
+}
+function end(win, reason='') {saveHighScore();started=false;hud.style.display='none';overlay.style.display='grid';const record=score>=highScore?'🏆 NEUER REKORD!':'Rekord: '+highScore;panel.innerHTML=win?`<h1>GESCHAFFT!</h1><p class="sub"></p><div style="font-size:52px">🏆</div><p>Gesammelte Sterne: ${score}</p><p style="color:#ffd66c;font-weight:900">${record}</p><button id="again">NOCHMAL SPIELEN</button>`:`<h1>GAME OVER</h1><p class="sub">${reason || 'Du hast alle sechs Leben verloren.'}</p><div style="font-size:52px">💀</div><p>Gesammelte Sterne: ${score}</p><p style="color:#ffd66c;font-weight:900">${record}</p><p>Persönlicher Highscore: ${highScore}</p><button id="again">NOCHMAL VERSUCHEN</button>`;document.getElementById('again').onclick=showMenu;}
+function showMenu(){panel.innerHTML=`<div style="color:#8bb9d1;font-size:11px;letter-spacing:5px;font-weight:900;margin-bottom:5px">✦ EIN VERFLUCHTES ABENTEUER ✦</div>
+<h1>VILLA ALBTRAUM</h1><div style="color:#ffc96b;font-weight:900;letter-spacing:4px;text-shadow:2px 2px #39283a">DIE TORE DER VILLA</div>
+<div style="height:3px;max-width:310px;margin:12px auto 16px;background:repeating-linear-gradient(90deg,#b78d52 0 8px,transparent 8px 12px)"></div><p class="sub">In der Villa Albtraum warten vier verfluchte Bereiche, den verschneiten toten Garten und danach einen endlosen dunklen Gang in der Villa auf dich: In der uralten Bibliothek rascheln Bücher von selbst, während im Botanischen Garten Ranken und geheimnisvolle Pflanzen lauern. Durchquere lange, düstere Bereiche. Jedes Biom endet an einer gewaltigen Steinmauer. Nur durch das Tor kommst du weiter – dabei erhältst du ein Leben und erst dann wechselt die Welt.</p><div style="margin:12px auto;padding:9px 16px;border:1px solid #ffc96b55;border-radius:12px;max-width:280px;color:#ffd66c;font-weight:900">🏆 DEIN HIGHSCORE: ${highScore}</div><div style="font-weight:800;margin:14px 0 7px">Schwierigkeit wählen</div>
+<div class="cards" style="margin:8px 0 14px">
+<button class="char diffChoice" data-diff="easy"><b>🌱 LEICHT</b><small>Mehr Druck · trotzdem verzeihender</small></button>
+<button class="char diffChoice selected" data-diff="normal"><b>⚔️ NORMAL</b><small>Viele Gegner · schnelle Angriffe</small></button>
+<button class="char diffChoice" data-diff="hard"><b>🔥 SCHWER</b><small>Extrem viele Gegner · sehr schnelle Angriffe</small></button>
+</div><div style="font-weight:800">Wähle deine Figur</div><div class="cards"><button class="char ${chosen===0?'selected':''}" data-char="0"><div class="avatar"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<rect width="64" height="64" fill="#172235"/>
+<path fill="#263a55" d="M8 56h48v8H8z"/><path fill="#5b3c70" d="M13 63l5-19 14-7 14 7 5 19z"/>
+<path fill="#d8a878" d="M23 24h18v18H23z"/><path fill="#8b5a4a" d="M21 29h4v8h-4zm18 0h4v8h-4z"/>
+<path fill="#34243e" d="M20 24V15h5V9h15v6h5v10H40v-5H24v5z"/>
+<path fill="#f0c18c" d="M25 29h4v4h-4zm12 0h4v4h-4z"/><path fill="#5b2b38" d="M29 37h8v3h-8z"/>
+<path fill="#241a31" d="M12 16h40v5H12zM17 11h30v5H17zM23 6h18v5H23zM28 1h8v5h-8z"/>
+<path fill="#b48b54" d="M12 16h40v3H12z"/><path fill="#e8c778" d="M29 16h7v3h-7z"/>
+<path fill="#6f4b85" d="M17 43h30v8H17z"/><path fill="#c9a2df" d="M27 44h10v4H27z"/>
+<path fill="#d9e8ff" d="M24 30h3v3h-3zm13 0h3v3h-3z"/>
+<path fill="#9b79c1" d="M8 58h48v3H8z"/>
+<path fill="#b9e6f2" d="M5 8h3v3H5zm50 9h3v3h-3zM8 39h3v3H8z"/>
+</svg></div><b>Hexe</b><small>Stark 💥 · langsam · 6 Startleben · kräftige Zauber</small></button><button class="char ${chosen===1?'selected':''}" data-char="1"><div class="avatar"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<rect width="64" height="64" fill="#172235"/>
+<path fill="#263a55" d="M8 56h48v8H8z"/><path fill="#31558a" d="M12 63l6-19 14-7 14 7 6 19z"/>
+<path fill="#b97855" d="M23 24h18v18H23z"/><path fill="#3d2a2d" d="M21 25h5v9h-5zm17 0h5v9h-5z"/>
+<path fill="#263653" d="M20 24V15h5V9h15v6h5v10H40v-5H24v5z"/>
+<path fill="#f0c08e" d="M25 29h4v4h-4zm12 0h4v4h-4z"/><path fill="#493044" d="M29 37h8v3h-8z"/>
+<path fill="#17243c" d="M10 16h44v5H10zM16 11h32v5H16zM22 6h20v5H22zM28 1h8v5h-8z"/>
+<path fill="#9dc8f2" d="M10 16h44v3H10z"/><path fill="#f3d27b" d="M29 16h7v3h-7z"/>
+<path fill="#284675" d="M17 43h30v8H17z"/><path fill="#8bbce8" d="M27 44h10v4H27z"/>
+<path fill="#d9e8ff" d="M24 30h3v3h-3zm13 0h3v3h-3z"/>
+<path fill="#a6d5ff" d="M8 58h48v3H8zM5 8h3v3H5zm50 9h3v3h-3zM8 39h3v3H8z"/>
+</svg></div><b>Zauberer</b><small>Schwach 🪽 · sehr schnell · 6 Startleben · leichte Zauber</small></button></div>
+<button id="openSkinMenu" class="secondary" type="button">✨ SKIN-GALERIE</button>
+<div id="skinMenuPanel" class="skin-modal" style="display:none">
+ <div class="skin-dialog">
+  <div style="color:#f5d18a;font-size:11px;font-weight:900;letter-spacing:3px">KLEIDERSCHRANK DER MAGIER</div>
+  <h2>Wähle deinen Skin</h2>
+  <p class="sub">Wähle zuerst Hexe oder Zauberer und dann dein Gewand.</p>
+  <div id="skinHeroTabs" class="skin-tabs"></div>
+  <div id="skinChoices" class="skin-grid"></div>
+  <div id="skinSelectionName" class="skin-selection-name"></div>
+  <button id="closeSkinMenu" type="button">FERTIG</button>
+ </div>
+</div>
+<div class="weapon-select">
+ <div class="weapon-heading">WÄHLE DEINE WAFFE</div>
+ <div class="weapon-options">
+  <button type="button" class="weapon-option selected" data-weapon="wand"><span>✨</span><b>Zauberstab</b><small>Fernkampf & Magie</small></button>
+  <button type="button" class="weapon-option" data-weapon="sword"><span>⚔️</span><b>Schwert</b><small>Nahkampf & Hiebe</small></button>
+ </div>
+</div>
+<button id="start">SPIEL STARTEN ▶</button><div class="hint">A / D oder ← / → laufen · W / ↑ / Leertaste = Doppelsprung · F oder X = Waffe einsetzen<br>Wähle am Anfang Zauberstab oder Schwert. Sammle 🧪 Zaubertränke für kurze Zeit Tempo und Unsterblichkeit und 💗 Lebensrunen zum Auffüllen deiner Leben (maximal 6). Springe auf Gegner, um sie zu besiegen! Du kannst sie auch mit Zauber treffen. Weiche ihren Projektilen aus. In der Bibliothek lauern Büchermonster, im Garten Pflanzenmonster und im Alchemielabor Feuer- und mehrfarbige Lichtgeister. Dein Highscore bleibt auf diesem Gerät gespeichert. Tablet: Bildschirmknöpfe benutzen.</div>`;bindMenu();overlay.style.display='grid';}
+function bindMenu(){
+ const modal=document.getElementById('skinMenuPanel');
+ const tabs=document.getElementById('skinHeroTabs');
+ const box=document.getElementById('skinChoices');
+ const nameLabel=document.getElementById('skinSelectionName');
+
+ function renderSkinGallery(){
+  if(!modal||!tabs||!box)return;
+  tabs.innerHTML=[
+   `<button type="button" data-skinhero="0" class="${chosen===0?'selected':''}">🧙‍♀️ HEXE</button>`,
+   `<button type="button" data-skinhero="1" class="${chosen===1?'selected':''}">🧙‍♂️ ZAUBERER</button>`
+  ].join('');
+  tabs.querySelectorAll('[data-skinhero]').forEach(btn=>btn.onclick=()=>{
+   chosen=Number(btn.dataset.skinhero);
+   chosenSkin=selectedSkins[chosen]||0;
+   document.querySelectorAll('.char[data-char]').forEach(x=>x.classList.toggle('selected',Number(x.dataset.char)===chosen));
+   renderSkinGallery();
+  });
+  box.innerHTML=skins[chosen].map((sk,i)=>`
+   <button type="button" class="skin-option ${i===chosenSkin?'selected':''}" data-skin="${i}">
+    <span class="skin-swatch" style="background:linear-gradient(135deg,${sk.hat} 0 33%,${sk.robe} 34% 78%,${sk.trim} 79%)"></span>
+    <small>${sk.name}</small>
+   </button>`).join('');
+  box.querySelectorAll('[data-skin]').forEach(btn=>btn.onclick=()=>{
+   chosenSkin=Number(btn.dataset.skin);
+   selectedSkins[chosen]=chosenSkin;
+   renderSkinGallery();
+  });
+  if(nameLabel)nameLabel.textContent='Ausgewählt: '+skins[chosen][chosenSkin].name;
+ }
+ const open=document.getElementById('openSkinMenu');
+ const close=document.getElementById('closeSkinMenu');
+ if(open&&modal)open.onclick=()=>{renderSkinGallery();modal.style.display='grid';};
+ if(close&&modal)close.onclick=()=>{modal.style.display='none';};
+ if(modal)modal.addEventListener('click',e=>{if(e.target===modal)modal.style.display='none';});
+
+ document.querySelectorAll('.char[data-char]').forEach(btn=>btn.onclick=()=>{
+  chosen=Number(btn.dataset.char);
+  chosenSkin=selectedSkins[chosen]||0;
+  document.querySelectorAll('.char[data-char]').forEach(x=>x.classList.toggle('selected',x===btn));
+ });
+
+ document.querySelectorAll('.diffChoice').forEach(btn=>{
+  btn.classList.toggle('selected',btn.dataset.diff===difficultyMode);
+  btn.onclick=()=>{
+   difficultyMode=btn.dataset.diff;
+   document.querySelectorAll('.diffChoice').forEach(x=>x.classList.toggle('selected',x===btn));
+  };
+ });
+ document.querySelectorAll('[data-weapon]').forEach(btn=>{
+  btn.classList.toggle('selected',btn.dataset.weapon===weaponChoice);
+  btn.onclick=()=>{
+   weaponChoice=btn.dataset.weapon;
+   document.querySelectorAll('[data-weapon]').forEach(x=>x.classList.toggle('selected',x.dataset.weapon===weaponChoice));
+  };
+ });
+ const startButton=document.getElementById('start');
+ if(startButton)startButton.addEventListener('click',()=>{
+  try{
+   chosenSkin=selectedSkins[chosen]||0;
+   reset();started=true;paused=false;overlay.style.display='none';hud.style.display='flex';
+   last=performance.now();requestAnimationFrame(loop);
+  }catch(err){
+   started=false;hud.style.display='none';overlay.style.display='grid';
+   const msg=document.createElement('p');msg.style.color='#ff9b9b';
+   msg.textContent='Das Spiel konnte nicht starten: '+(err&&err.message?err.message:'Unbekannter Fehler');
+   panel.appendChild(msg);console.error(err);
+  }
+ });
+}
+function loop(t){if(!started)return;let dt=Math.min((t-last)/16.67,2.5);last=t;frame+=dt;if(biomeBanner>0)biomeBanner=Math.max(0,biomeBanner-dt);
+ if(!paused){
+ const h=heroes[chosen];const moveDir=(keys.left?-1:0)+(keys.right?1:0);
+ const activeSpeed=h.speed*(potionTimer>0?1.32:1);if(moveDir!==0){p.vx+=(moveDir*activeSpeed-p.vx)*Math.min(1,0.28*dt);p.face=moveDir;}
+ else p.vx*=Math.pow(0.78,dt);
+ if(Math.abs(p.vx)<0.08)p.vx=0;
+ if(p.on){coyote=8;jumpsUsed=0;}else coyote=Math.max(0,coyote-dt);if(keys.jump&&!jumpLock&&jumpsUsed<2&&(p.on||coyote>0||jumpsUsed===1)){p.vy=-h.jump;jumpsUsed++;p.on=false;coyote=0;jumpLock=true;burst(p.x+p.w/2,p.y+p.h,'#d8e9f4',jumpsUsed===1?7:11)}if(!keys.jump)jumpLock=false;
+ if(keys.throw&&throwCooldown<=0){
+ if(weaponChoice==='sword'){
+  swordFlash=13;throwCooldown=34;
+  const slash={x:p.face>0?p.x+p.w-1:p.x-43,y:p.y+8,w:44,h:39};
+  burst(p.face>0?slash.x+slash.w:slash.x,slash.y+slash.h/2,'#f5df9b',8);
+  for(const e of enemies)if(e.alive&&collide(slash,e)){
+   e.alive=false;score+=2;burst(e.x+e.w/2,e.y+e.h/2,'#e7d39b',13);
+  }
+  if(boss&&boss.alive&&collide(slash,boss)){boss.hp=Math.max(0,boss.hp-2);boss.flash=12;burst(boss.x+boss.w/2,boss.y+30,'#ffe3a1',12);}
+  updateHud();
+ }else{
+  const spellSkin=skins[chosen][chosenSkin]||skins[chosen][0];
+  const tipX=p.x+(p.face>0?34:-8),tipY=p.y+30;
+  balls.push({x:p.face>0?p.x+p.w:p.x-17,y:p.y+22,w:chosen===0?21:15,h:chosen===0?21:15,vx:p.face*h.ballSpeed,damage:h.ballDamage,life:95,magicColor:spellSkin.trim,coreColor:spellSkin.hat,magicType:chosen===0?'hex':'frost'});
+  castFlash=12;burst(tipX,tipY,spellSkin.trim,9);throwCooldown=55;updateHud();
+ }
+}
+ const previousX=p.x;
+ p.x+=p.vx*dt;p.x=Math.max(0,p.x);p.vy=Math.min(MAX_FALL_SPEED,p.vy+gravity*dt);p.y+=p.vy*dt;p.on=false;
+ for(const q of platforms){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>=q.y&&p.y+p.h<=q.y+18&&p.vy>=0){p.y=q.y-p.h;p.vy=0;p.on=true}}
+ if(p.on&&!wasOnGround)burst(p.x+p.w/2,p.y+p.h,'#c8d5dc',6);wasOnGround=p.on;
+ if(p.y>H+100){if(potionTimer>0){p.y=ground-90;p.vy=0;p.x=Math.max(cam+20,p.x-70);burst(p.x+p.w/2,p.y,'#74f5ff',22);}else{end(false,'Du bist in den Abgrund gefallen! Dieser Sturz ist sofort tödlich.');return;}}
+ const difficulty=Math.min(9,Math.floor(cam/1800)); const modeScale=difficultyMode==='easy'?1.02:(difficultyMode==='hard'?1.72:1.34);
+ for(const e of enemies)if(e.alive){
+   if(e.frozen>0)e.frozen=Math.max(0,e.frozen-dt);else if(e.kind!==6&&!e.windowSentry)e.x+=e.vx*dt;
+   if(e.x<e.min){e.x=e.min;e.vx=Math.abs(e.vx);}
+   if(e.x>e.max){e.x=e.max;e.vx=-Math.abs(e.vx);}
+   if(e.kind===1&&!(e.frozen>0))e.y=e.baseY+Math.sin(frame/24+e.phase)*15;
+   if(e.shooter&&!(e.frozen>0)){
+     e.cooldown-=dt;
+     if(e.cooldown<=0&&Math.abs((p.x+p.w/2)-(e.x+e.w/2))<650&&e.x>cam-80&&e.x<cam+W+80){
+       const sx=e.x+e.w/2,sy=e.y+e.h*.58,tx=p.x+p.w/2,ty=p.y+p.h*.5;
+       const lead=Math.max(-55,Math.min(55,p.vx*8));const dx=tx+lead-sx,dy=ty-sy,len=Math.max(1,Math.hypot(dx,dy)),speed=e.kind===6?6.2:(((e.kind===3||e.kind===5)?3.65:4.0)*modeScale+difficulty*.18);
+       enemyShots.push({x:sx-6,y:sy-6,w:12,h:12,vx:dx/len*speed,vy:dy/len*speed+(e.kind===3?-.4:0),life:180,kind:e.windowSentry?'window':(e.kind===6?'ice':(e.kind===3?'plant':(e.kind===4?'fire':(e.kind===5?'light':'ghost'))))});
+       e.cooldown=e.windowSentry?(difficultyMode==='easy'?108:(difficultyMode==='hard'?68:88))+Math.random()*18:Math.max(difficultyMode==='easy'?72:34,(difficultyMode==='hard'?48:68)-difficulty*4)+Math.random()*16;
+     }
+   }
+   if(collide(p,e)){if(p.vy>0&&p.y+p.h-e.y<30){e.alive=false;p.vy=-8;score+=2;burst(e.x+e.w/2,e.y,'#b7f27b',10);updateHud()}else hurt()}
+ }
+ if(boss&&boss.alive){
+   boss.phase+=dt;boss.flash=Math.max(0,boss.flash-dt);boss.cooldown-=dt;
+   boss.y=ground-boss.h+Math.sin(boss.phase*.06)*2;
+   if(boss.cooldown<=0&&boss.x>cam-120&&boss.x<cam+W+120){
+     const sx=boss.x+boss.w*.25,sy=boss.y+48,dx=p.x+p.w/2-sx,dy=p.y+p.h/2-sy,len=Math.max(1,Math.hypot(dx,dy));
+     const bossShotSpeed=difficultyMode==='easy'?3.0:(difficultyMode==='hard'?4.4:3.7);enemyShots.push({x:sx-10,y:sy-10,w:20,h:20,vx:dx/len*bossShotSpeed,vy:dy/len*bossShotSpeed-.35,life:220,kind:'feast'});
+     boss.cooldown=difficultyMode==='easy'?118:(difficultyMode==='hard'?76:96);
+   }
+   if(collide(p,boss)){if(p.vy>0&&p.y+p.h-boss.y<34){p.vy=-8;boss.hp-=h.ballDamage;boss.flash=12;burst(boss.x+40,boss.y,'#ffd18a',12);}else hurt();}
+   if(boss.hp<=0){boss.alive=false;score+=15;burst(boss.x+boss.w/2,boss.y+boss.h/2,'#ffd47b',32);updateHud();levelComplete();}
+ }
+ for(const shot of enemyShots){
+   shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;
+   if(shot.kind==='plant')shot.vy+=.055*dt;
+   shot.life-=dt;
+   if(collide(p,shot)){hurt();shot.life=0;}
+ }
+ enemyShots=enemyShots.filter(q=>q.life>0&&q.x>cam-100&&q.x<cam+W+100&&q.y< H+120&&q.y>-80);
+ for(const b of balls){
+   b.x+=b.vx*dt;b.life-=dt;
+   for(const shot of enemyShots)if(shot.life>0&&collide(b,shot)){shot.life=0;b.life=0;burst(shot.x,shot.y,'#fff0a8',5);break;}
+   for(const e of enemies)if(e.alive&&b.life>0&&collide(b,e)){
+     b.life=0;
+     if(b.magicType==='frost'){
+       e.frozen=180;
+       burst(e.x+e.w/2,e.y+e.h/2,'#a9efff',16);
+     }else{
+       e.alive=false;score+=2;
+       burst(e.x+e.w/2,e.y,'#d9a4ff',15);
+     }
+     updateHud();break;
+   }
+   if(boss&&boss.alive&&b.life>0&&collide(b,boss)){boss.hp-=h.ballDamage;boss.flash=12;b.life=0;burst(b.x,b.y,'#ffd18a',9);if(boss.hp<=0){boss.alive=false;score+=15;burst(boss.x+boss.w/2,boss.y+boss.h/2,'#ffd47b',32);updateHud();levelComplete();}}
+ }
+ balls=balls.filter(b=>b.life>0&&b.x>cam-60&&b.x<cam+W+80);
+ if(castFlash>0)castFlash=Math.max(0,castFlash-dt);if(swordFlash>0)swordFlash=Math.max(0,swordFlash-dt);if(throwCooldown>0){throwCooldown=Math.max(0,throwCooldown-dt);if(throwCooldown===0)updateHud();}
+ for(const o of obstacles)if(collide(p,o)){if(p.y+p.h-o.y<15&&p.vy>0){p.y=o.y-p.h;p.vy=0;p.on=true}else hurt()}
+ for(const s of stars)if(!s.got&&Math.abs((p.x+p.w/2)-s.x)<23&&Math.abs((p.y+p.h/2)-s.y)<28){s.got=true;score++;updateHud()}
+ // Zaubertrank einsammeln: kurzer Tempo- und Schutzschub.
+ for(const q of potions)if(!q.got&&collide(p,{x:q.x,y:q.y,w:q.w,h:q.h})){
+   q.got=true;potionTimer=180;p.inv=Math.max(p.inv,12);burst(q.x+q.w/2,q.y+q.h/2,'#74f5ff',24);
+ }
+ // Lebensrunen erhöhen die maximale Lebensanzahl dauerhaft (bis maximal 6).
+ for(const q of hearts)if(!q.got&&collide(p,{x:q.x,y:q.y,w:q.w,h:q.h})){
+   q.got=true;maxLives=Math.min(6,maxLives+1);lives=Math.min(6,Math.min(maxLives,lives+1));
+   burst(q.x+q.w/2,q.y+q.h/2,'#ff7bba',22);updateHud();
+ }
+ // The stone wall blocks the full height above the doorway. Only a grounded player fits through.
+ if(previousX+p.w<=nextDoorX && p.x+p.w>=nextDoorX){
+   if(activeBiome===3 && boss && boss.alive){p.x=nextDoorX-p.w-2;p.vx=0;}
+   else if(p.y<DOOR_TOP || p.y+p.h<ground-4){
+     p.x=nextDoorX-p.w;p.vx=0;
+   }else{
+     enterCheckpointDoor();
+   }
+ }
+ if(p.inv>0)p.inv-=dt;if(potionTimer>0)potionTimer=Math.max(0,potionTimer-dt);
+ updateParticles(dt);
+ const targetCam=Math.max(0,p.x-260);
+ cam+=(targetCam-cam)*Math.min(1,0.16*dt);
+ generateAhead();updateHud();
+
+ }
+ draw();if(started)requestAnimationFrame(loop);
+}
+let last=0;
+window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp',' ','w','a','d','W','A','D','f','F','x','X','Escape'].includes(e.key))e.preventDefault();if(e.key==='Escape'&&started){paused=!paused;return}if(['ArrowLeft','a','A'].includes(e.key))keys.left=true;if(['ArrowRight','d','D'].includes(e.key))keys.right=true;if(['ArrowUp','w','W',' '].includes(e.key))keys.jump=true;if(['f','F','x','X'].includes(e.key))keys.throw=true});
+window.addEventListener('keyup',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.left=false;if(['ArrowRight','d','D'].includes(e.key))keys.right=false;if(['ArrowUp','w','W',' '].includes(e.key))keys.jump=false;if(['f','F','x','X'].includes(e.key))keys.throw=false});
+window.addEventListener('blur',()=>{keys={left:false,right:false,jump:false,throw:false};jumpLock=false;});
+document.querySelectorAll('.touch').forEach(b=>{const k=b.dataset.key;const on=e=>{e.preventDefault();keys[k]=true},off=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)});
+bindMenu();
+})();
+</script></body></html>

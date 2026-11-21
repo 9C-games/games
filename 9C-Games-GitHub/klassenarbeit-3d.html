@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Klassenarbeit – Frau Geßner</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;font-family:Arial,sans-serif}
+canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;color:#fff;pointer-events:none;text-shadow:0 2px 4px #000}
+.panel{background:#101b27df;border:1px solid #ffffff30;border-radius:12px;padding:10px 13px;backdrop-filter:blur(8px);box-shadow:0 5px 24px #0005}
+#top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+#stats{display:flex;gap:8px}.stat{font-size:11px;color:#c5d1db;text-transform:uppercase;letter-spacing:.08em}.stat strong{display:block;color:white;font-size:19px;letter-spacing:0;margin-top:3px}
+#teacherHud{width:220px;font-size:12px;color:#f3dddd}
+#bar{height:11px;background:#403b40;border-radius:10px;overflow:hidden;margin:7px 0 4px}
+#fill{height:100%;width:0;background:linear-gradient(90deg,#e7c55c,#ff2929);transition:width .08s}
+#mission{max-width:260px;font-size:13px;line-height:1.4}#mission b{color:#f4ca71;text-transform:uppercase;font-size:11px;letter-spacing:.1em}
+#inventory{position:absolute;left:12px;bottom:82px;max-width:230px;font-size:12px;line-height:1.5}
+#inventory b{color:#f4ca71}
+#bottom{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);min-width:min(520px,94vw);text-align:center;font-size:14px}
+#sub{font-size:12px;color:#c3d0dc;margin-top:5px}
+#cross{position:absolute;left:50%;top:50%;width:8px;height:8px;border:1px solid white;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 6px white}
+#toast{position:fixed;z-index:8;display:none;top:20%;left:50%;transform:translateX(-50%);background:#142333ee;color:white;padding:12px 18px;border:1px solid #ffffff44;border-radius:10px;max-width:90vw;text-align:center}
+#shade{position:fixed;inset:0;background:#050b12aa;z-index:10;display:none;align-items:center;justify-content:center}
+.dialog{width:min(500px,92vw);background:#f2eddf;color:#20262b;border-radius:16px;padding:24px;box-shadow:0 20px 70px #000b}
+.dialog h2{margin:0 0 8px}.dialog p{line-height:1.5;color:#45494b}
+#choices{display:grid;gap:8px}.choice{padding:12px;text-align:left;border:1px solid #c9c1b1;border-radius:8px;background:#fffdf6;font-size:15px;cursor:pointer}
+.choice:hover{background:#f6e6c3}
+#close{margin-top:12px;background:#263a4b;color:white;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+#start{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,#526d7e,#111a24 72%);color:white}
+#startCard{max-width:650px;width:92vw;padding:30px;background:linear-gradient(145deg,#213444,#101923);border:1px solid #91a9ba55;border-radius:18px;box-shadow:0 20px 70px #0009}
+#startCard h1{font-size:clamp(28px,5vw,42px);margin:0 0 10px}
+#startCard p{line-height:1.55;color:#d6e0e8}
+#startCard button{background:#f1c66c;color:#20262b;border:0;border-radius:9px;padding:13px 20px;font-size:16px;font-weight:bold;cursor:pointer}
+#caught{display:none;position:fixed;z-index:30;inset:0;background:#180609eF;color:white;align-items:center;justify-content:center;text-align:center}
+#caught .inner{max-width:480px;padding:30px}
+#caught h1{font-size:42px;color:#ff4c4c;margin:0 0 10px}
+#caught button{padding:12px 18px;border:0;border-radius:8px;background:#f0c56b;font-weight:bold;cursor:pointer}
+@media(max-width:700px){#mission{display:none}#teacherHud{width:165px}#inventory{max-width:180px}.stat{padding:8px}}
+</style>
+</head>
+<body>
+<div id="hud">
+ <div id="top">
+  <div id="stats">
+   <div class="panel stat">Zeit<strong id="time">35:00</strong></div>
+   <div class="panel stat">Aufgaben<strong id="progress">0 / 4</strong></div>
+  </div>
+  <div id="teacherHud" class="panel">FRAU GEẞNER · ENTDECKUNG<div id="bar"><div id="fill"></div></div><span id="alertText">Sie kontrolliert den Raum.</span></div>
+  <div id="mission" class="panel"><b>Deine Aufgabe</b><br><span id="missionText">Nimm das Aufgabenblatt von deinem Tisch.</span></div>
+ </div>
+ <div id="inventory" class="panel"><b>Gefundene Hinweise</b><br><span id="clues">Noch keine</span></div>
+ <div id="cross"></div>
+ <div id="bottom" class="panel"><div id="action">E – Aufgabenblatt nehmen</div><div id="sub">WASD bewegen · Maus umsehen (klicken oder ziehen) · E benutzen · Leertaste sitzen/aufstehen · Shift schleichen</div></div>
+</div>
+<div id="toast"></div>
+<div id="shade"><div class="dialog"><h2 id="dlgTitle">Aufgabe</h2><p id="dlgText"></p><div id="choices"></div><button id="close">Schließen</button></div></div>
+<div id="caught"><div class="inner"><h1>ERWISCHT!</h1><p>Frau Geßner hat dich zu lange im Blick gehabt. Du musst zurück an deinen Platz. Deine Aufmerksamkeit wird zurückgesetzt, aber du verlierst Zeit.</p><button id="again">Zurück ins Klassenzimmer</button></div></div>
+<div id="start"><div id="startCard">
+ <h1>Die Klassenarbeit</h1>
+ <p>Du hast kaum gelernt. Auf deinem Aufgabenblatt stehen vier neue Aufgaben aus Mathe, Englisch, Französisch und Biologie. Die passenden Hinweise sind zwischen normalen Schulsachen versteckt – du musst sie selbst entdecken.</p>
+ <p><b>Frau Geßner</b> läuft auf mehreren Routen. Das rote Sichtfeld zeigt, in welche Richtung sie schaut. Es wird nach vorne breiter. Wenn du zu lange in ihrem Blickfeld bleibst, wirst du erwischt.</p>
+ <p><b>Steuerung:</b> WASD = bewegen · Maus = umsehen · E = benutzen/suchen · Leertaste = hinsetzen/aufstehen · Shift = schleichen · M = Raumplan. Wer rennt, ist laut – Frau Geßner hört das! Klicke ins Spiel und bewege die Maus zum Umsehen. Falls der Maus-Lock nicht klappt: linke Maustaste gedrückt halten und ziehen.</p>
+ <p><b>Schwierigkeit wählen:</b></p><div id="diff" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="dbtn" data-d="leicht">😌 Leicht</button><button class="dbtn" data-d="normal">📝 Normal</button><button class="dbtn" data-d="schwer">😰 Schwer</button><button class="dbtn" data-d="hardcore">💀 Albtraum</button></div><p id="diffInfo" style="font-size:13px;min-height:40px"></p><button id="startBtn">Spiel starten</button>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=> {
+const $=id=>document.getElementById(id);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.physicallyCorrectLights=true;
+document.body.insertBefore(renderer.domElement,$('hud'));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9eb4c1);scene.fog=new THREE.Fog(0x9eb4c1,22,48);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,80);camera.rotation.order='YXZ';
+scene.add(new THREE.HemisphereLight(0xeaf5ff,0x6a5949,1.6));
+const sun=new THREE.DirectionalLight(0xffe9cb,2.3);sun.position.set(-7,12,7);sun.castShadow=true;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-16;sun.shadow.camera.right=16;sun.shadow.camera.top=16;sun.shadow.camera.bottom=-16;scene.add(sun);
+for(const x of [-7,0,7]){let l=new THREE.PointLight(0xfff0d4,17,15);l.position.set(x,4.7,-1);scene.add(l);}
+const M=(c,r=.8,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+function box(w,h,d,material,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
+function cyl(rt,rb,h,material,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
+const wall=M(0xd9d7ce),floor=M(0x927d69),wood=M(0x956c4b),woodTop=M(0xb58a61),metal=M(0x53616a,.45,.55),paper=M(0xf3eedc);
+// Procedural, subtle surface textures: no external image downloads required.
+function makeTexture(base,grain,seed=1){
+ const c=document.createElement('canvas');c.width=512;c.height=512;
+ const ctx=c.getContext('2d');ctx.fillStyle=base;ctx.fillRect(0,0,512,512);
+ let n=seed;
+ const rand=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+ for(let i=0;i<2600;i++){
+  const x=rand()*512,y=rand()*512,w=2+rand()*26,h=1+rand()*3;
+  ctx.globalAlpha=.025+rand()*.055;ctx.fillStyle=grain;ctx.fillRect(x,y,w,h);
+ }
+ ctx.globalAlpha=1;
+ const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(3,3);tex.colorSpace=THREE.SRGBColorSpace;return tex;
+}
+const floorTex=makeTexture('#927d69','#342b25',17);
+const woodTex=makeTexture('#b58a61','#4c3020',29);
+floor.map=floorTex;floor.roughness=.94;floor.needsUpdate=true;
+woodTop.map=woodTex;woodTop.roughness=.72;woodTop.needsUpdate=true;
+
+box(25,.3,23,floor,0,-.18,0);box(25,5.6,.3,wall,0,2.65,-11.5);box(25,5.6,.3,wall,0,2.65,11.5);box(.3,5.6,23,wall,-12.5,2.65,0);box(.3,5.6,23,wall,12.5,2.65,0);box(25,.25,23,M(0xf1eee5),0,5.45,0);
+
+// Subtle floor tile joints and skirting boards.
+for(let x=-11.5;x<=11.5;x+=2.3) box(.012,.008,22.6,M(0x806d5e),x,-.012,0);
+for(let z=-10.5;z<=10.5;z+=2.1) box(24.6,.008,.012,M(0x806d5e),0,-.011,z);
+box(24.8,.18,.08,M(0xb6b0a4),0,.06,-11.28);
+box(24.8,.18,.08,M(0xb6b0a4),0,.06,11.28);
+box(.08,.18,22.8,M(0xb6b0a4),-12.28,.06,0);
+box(.08,.18,22.8,M(0xb6b0a4),12.28,.06,0);
+// Ceiling fluorescent panels and soft local lighting.
+for(const x of [-7,0,7]){
+  box(2.2,.07,.72,M(0xf4f0df,.35),x,5.28,1.0);
+  const lamp=new THREE.PointLight(0xfff2d8,7,11);lamp.position.set(x,4.95,1.0);scene.add(lamp);
+}
+// Chalk tray and wall-mounted timetable.
+box(5.8,.10,.12,M(0x7b8580),0,2.78,-11.08);
+for(let i=0;i<3;i++)box(.18,.025,.035,M([0xe9e2c8,0xd7d8d1,0xe5c8a8][i]),-2.2+i*.22,2.86,-11.02);
+box(1.35,.95,.045,M(0xe7e0ce),9.55,3.05,-11.25);
+for(let r=0;r<4;r++)for(let c=0;c<3;c++)box(.30,.012,.012,M(0x718078),9.1+c*.42,3.36-r*.19,-11.21);
+
+const winTex=(()=>{const c=document.createElement('canvas');c.width=256;c.height=300;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,300);g.addColorStop(0,'#6fb2e8');g.addColorStop(1,'#d8efff');x.fillStyle=g;x.fillRect(0,0,256,300);x.fillStyle='#ffffffaa';for(const [a,b,r] of [[60,60,26],[90,52,32],[190,90,24],[215,84,18]]){x.beginPath();x.arc(a,b,r,0,7);x.fill();}x.fillStyle='#5f9a52';x.fillRect(0,235,256,65);for(const [a,r] of [[40,38],[120,46],[205,40]]){x.fillStyle='#3f7c3e';x.fillRect(a-5,200,10,50);x.beginPath();x.arc(a,190,r,0,7);x.fill();}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+const winMat=new THREE.MeshStandardMaterial({map:winTex,emissive:0xffffff,emissiveMap:winTex,emissiveIntensity:.6,roughness:.3});
+box(7.2,1.35,.16,M(0x315c4f),0,3.55,-11.28);
+for(let i=0;i<5;i++)box(.9,.035,.025,M(0xe4e9dc),-2.4+i*1.1,3.75-(i%2)*.3,-11.18);
+for(let i=0;i<5;i++){let x=-10+i*4.8;box(3.45,2.0,.12,winMat,x,3.1,-11.28);box(3.55,.1,.16,M(0xf6f2e7),x,4.15,-11.15);box(.1,2.1,.16,M(0xf6f2e7),x-1.75,3.1,-11.15);box(.1,2.1,.16,M(0xf6f2e7),x+1.75,3.1,-11.15);}
+for(let x of [-7,0,7])box(3,.08,1,M(0xf8f3df),x,5.2,-1);
+box(1.7,2.9,.15,wood,10.7,1.45,-11.25);box(.07,.08,.08,M(0xd9b25c),10.15,1.4,-11.12);
+// teacher's desk and storage
+function desk(x,z){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);box(2.05,.15,1.25,woodTop,0,1.05,0,g);for(let dx of [-.88,.88])for(let dz of [-.48,.48])box(.09,1,.09,metal,dx,.5,dz,g);return g;}
+desk(0,-8.65);
+box(2.2,2.2,.55,wood,-10.9,1.1,-8.8);for(let y of [.5,1.1,1.7])box(2.05,.07,.58,woodTop,-10.9,y,-8.48);
+for(let i=0;i<7;i++){let b=box(.19,.5,.35,M([0x76505a,0x496e7a,0x9b8351,0x547354][i%4]),-11.65+i*.23,.82,-8.45);b.rotation.z=(Math.random()-.5)*.09;}
+// desk + chair helper
+function studentDesk(x,z){
+ let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ box(2.05,.14,1.3,woodTop,0,1.05,0,g);
+ box(2.07,.035,1.32,M(0x79583e),0,.965,0,g);
+ for(let dx of [-.88,.88])for(let dz of [-.5,.5])box(.08,1,.08,metal,dx,.5,dz,g);
+ box(1.72,.055,.07,metal,0,.55,-.46,g);
+ box(1.72,.055,.07,metal,0,.55,.46,g);
+ // Chair seat, backrest, legs and rear support.
+ box(.95,.12,.85,M(0x526c7d),0,.52,1.12,g);
+ box(.95,.82,.12,M(0x526c7d),0,.96,1.5,g);
+ for(let dx of [-.39,.39])for(let dz of [.82,1.42])box(.055,.48,.055,metal,dx,.25,dz,g);
+ box(.72,.045,.055,metal,0,.48,1.12,g);
+ return g;
+}
+const desks=[];
+for(let row=0;row<4;row++)for(let col=0;col<4;col++){
+ let x=-7.5+col*5,z=-5.2+row*3.3;
+ if(row===3&&col===1)continue;
+ desks.push({x,z,g:studentDesk(x,z)});
+}
+// User's own complete desk and chair, in front of camera
+const home={x:-2.5,z:7.0};
+const ownDesk=studentDesk(home.x,home.z);
+const worksheet=box(.58,.025,.82,paper,home.x-.35,1.145,home.z-.12);
+worksheet.rotation.y=-.12;
+box(.12,.035,.18,M(0x385d7d),home.x+.52,1.15,home.z+.28);
+
+// A few ordinary school supplies on the player's desk.
+box(.38,.025,.28,M(0x536b7d),home.x+.48,1.145,home.z-.28).rotation.y=-.16;
+box(.32,.018,.22,paper,home.x+.48,1.17,home.z-.28).rotation.y=-.16;
+cyl(.022,.022,.38,M(0x36577b,.4,.25),home.x+.47,1.19,home.z+.12).rotation.z=Math.PI/2;
+
+// plants / classroom objects
+function plant(x,z){cyl(.25,.3,.38,M(0x9b684a),x,.19,z);for(let i=0;i<7;i++){let leaf=new THREE.Mesh(new THREE.ConeGeometry(.13,.75,7),M(i%2?0x477b4e:0x5c8a5c));leaf.position.set(x+(Math.random()-.5)*.36,.75+Math.random()*.2,z+(Math.random()-.5)*.36);leaf.rotation.z=(Math.random()-.5)*.8;scene.add(leaf);}}
+plant(-10,7.7);plant(10,7.5);
+box(.42,.16,.34,M(0x6c5847),1.55,.1,-8.05); // low storage box near the teacher's desk
+
+// Extra classroom details: clock, posters, radiator, backpacks and a waste bin.
+cyl(.42,.42,.08,M(0xf1eee5),-8.7,4.55,-11.25);
+cyl(.34,.34,.09,M(0x263a48),-8.7,4.55,-11.18);
+for(let j=0;j<3;j++){
+  box(1.15,.8,.035,M([0xd8e2d1,0xe6d5b9,0xd5dce8][j]),-10.8+j*2.0,2.55,-11.27);
+  box(.78,.035,.025,M(0x657d78),-10.8+j*2.0,2.72,-11.23);
+  box(.62,.025,.025,M(0x9a7759),-10.8+j*2.0,2.48,-11.23);
+}
+for(let j=0;j<8;j++)box(.07,.58,.08,M(0xb7b8b2),-11.2+j*.32,.55,9.8);
+for(let j=0;j<3;j++)box(.04,.65,.06,M(0x7c8588),-11.25+j*.85,.55,9.8);
+function backpack(x,z,color){
+  let b=new THREE.Group();b.position.set(x,.08,z);scene.add(b);
+  let body=new THREE.Mesh(new THREE.BoxGeometry(.62,.72,.28),M(color));body.position.y=.42;body.castShadow=true;b.add(body);
+  let pocket=new THREE.Mesh(new THREE.BoxGeometry(.4,.25,.035),M(0x263b4b));pocket.position.set(0,.25,.16);b.add(pocket);
+  let flap=new THREE.Mesh(new THREE.BoxGeometry(.48,.12,.32),M(color));flap.position.set(0,.78,0);b.add(flap);
+}
+backpack(-8.8,5.9,0x536b80);backpack(6.9,6.2,0x7d594c);backpack(8.8,-4.3,0x526b50);
+cyl(.28,.34,.62,M(0x59666b),11.2,.32,8.9);
+cyl(.29,.29,.06,M(0x313b40),11.2,.64,8.9);
+
+
+// Additional classroom furnishing and small objects for a more lived-in room.
+for(let x=-11;x<=11;x+=2.2)box(.035,.035,22,M(0xb9b7ae),x,5.34,0);
+for(let z=-10;z<=10;z+=2.0)box(24,.025,.035,M(0xb9b7ae),0,5.34,z);
+// Wall shelves with mixed-height books and binders.
+box(3.4,.12,.42,woodTop,-10.7,2.0,-10.95);
+for(let i=0;i<10;i++){
+ const h=.38+(i%4)*.09;
+ box(.16,h,.28,M([0x536a7c,0x8c5d4c,0x6b795b,0x9a835c][i%4]),-12.05+i*.30,2.06+h/2,-10.96).rotation.z=(i%3-1)*.045;
+}
+box(2.6,.12,.38,woodTop,10.7,2.0,-10.95);
+for(let i=0;i<7;i++){
+ const h=.42+(i%3)*.12;
+ box(.20,h,.26,M([0x586c80,0x8c634d,0x647a60][i%3]),9.65+i*.32,2.06+h/2,-10.96);
+}
+// Teacher desk laptop, paper tray and cup.
+box(.72,.045,.48,M(0x333d45,.35,.35),.46,1.17,-8.72);
+box(.66,.42,.035,M(0x202a32,.35,.35),.46,1.39,-8.93);
+box(.58,.34,.012,M(0x718b91,.3),.46,1.40,-8.905);
+box(.34,.08,.26,M(0x687d89),-.52,1.17,-8.68);
+for(let i=0;i<3;i++)box(.30,.012,.22,paper,-.52,1.22+i*.014,-8.68);
+cyl(.075,.085,.18,M(0xeee5d4),-.9,1.22,-8.72);
+cyl(.055,.055,.02,M(0x6a4736),-.9,1.32,-8.72);
+// Wastebasket with visible rim and a crumpled-paper shape.
+cyl(.22,.29,.42,M(0x59636a),11.1,.22,8.8);
+cyl(.235,.235,.035,M(0x303b42),11.1,.44,8.8);
+for(let i=0;i<4;i++){
+ const scrap=new THREE.Mesh(new THREE.IcosahedronGeometry(.09,0),M(0xe6e0d2));
+ scrap.position.set(11.0+(i%2)*.12,.48+(i%3)*.035,8.75+(i%2)*.10);scene.add(scrap);
+}
+// A few scattered papers and a ruler on unused desk corners.
+desks.forEach((d,i)=>{
+ if(i%3===0){
+  const sheet=box(.36,.012,.25,paper,d.x+.48,1.14,d.z-.30);
+  sheet.rotation.y=(i%2?-.2:.16);
+  const ruler=box(.48,.018,.035,M(0xd8c99a),d.x+.43,1.16,d.z+.08);
+  ruler.rotation.y=.08;
+ }
+});
+
+// student characters
+function person(x,z,color,isTeacher=false){
+ let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ box(isTeacher?.65:.55,isTeacher?1.08:.8,.38,M(color),0,isTeacher?1.12:1.0,0,g);
+ let h=new THREE.Mesh(new THREE.SphereGeometry(.28,18,14),M(0xd8ae8f));h.position.set(0,isTeacher?1.9:1.58,-.03);h.castShadow=true;g.add(h);
+ let hair=new THREE.Mesh(new THREE.SphereGeometry(.29,18,12,0,Math.PI*2,0,Math.PI*.58),M(isTeacher?0x49352c:0x49342d));hair.position.set(0,isTeacher?2.0:1.68,-.02);g.add(hair);
+ if(isTeacher){for(let s of [-1,1]){let eye=new THREE.Mesh(new THREE.SphereGeometry(.055,12,8),M(0xff2020,.25));eye.position.set(s*.105,1.92,.27);g.add(eye);}}
+ else {for(let s of [-1,1]){let a=box(.13,.48,.14,M(0xd8ae8f),s*.34,1,-.12,g);a.rotation.x=-.4;}}
+ return g;
+}
+const shirts=[0x526f8c,0x8a5c68,0x6e855e,0x98794f,0x70668b,0x4e7d7a,0x9b704e,0x5a6e7b];
+const students=[];desks.forEach((d,i)=>students.push(person(d.x,d.z+.58,shirts[i%shirts.length])));
+
+
+// Extra folders and stacked exercise books on some student desks.
+desks.forEach((d,i)=>{
+  if(i%3===1){
+    const stack=box(.52,.075,.38,M([0x6b5360,0x456476,0x8b754d][i%3]),d.x+.42,1.19,d.z-.24);
+    stack.rotation.y=.10*(i%2?1:-1);
+    box(.47,.012,.34,paper,d.x+.42,1.232,d.z-.24).rotation.y=stack.rotation.y;
+  }
+  if(i%4===0){
+    box(.16,.24,.035,M(0x657b73),d.x-.55,1.26,d.z+.18).rotation.z=-.12;
+    box(.16,.24,.035,M(0x80604d),d.x-.36,1.26,d.z+.18).rotation.z=.10;
+  }
+});
+
+// Everyday classroom clutter on students' desks: books, pencil cases, loose sheets and pens.
+desks.forEach((d,i)=>{
+  const topY=1.145;
+  if(i%4!==1){
+    const nb=box(.48,.035,.62,M(i%2?0x526b7d:0x7d5c4c),d.x-.42,topY,d.z-.12);
+    nb.rotation.y=(i%3-1)*.12;
+    box(.42,.012,.56,paper,d.x-.42,topY+.024,d.z-.12).rotation.y=nb.rotation.y;
+  }
+  if(i%3!==0){
+    const pencilCase=box(.48,.13,.19,M([0x344c62,0x8a594d,0x596e50][i%3]),d.x+.48,1.22,d.z+.28);
+    pencilCase.rotation.y=(i%2?.16:-.12);
+  }
+  if(i%2===0){
+    const pen=cyl(.025,.025,.42,M(0x344f72,.45,.2),d.x+.15,1.19,d.z-.32);
+    pen.rotation.z=Math.PI/2;
+    pen.rotation.y=.18;
+  }
+});
+
+// Clue objects: subtle objects to inspect, not HUD markers
+const clueData=[
+ {x:-10.75,z:-8.55,label:'Buch im Regal',tip:'Zwischen den Buchseiten steht: 12 × 7 = 84.',q:'Wie viel ist 12 × 7?',a:['72','84','96'],correct:1},
+ {x:7.5,z:-5.2,label:'Notiz unter einem Tisch',tip:'Auf der kleinen Notiz steht: Yesterday, she WENT to school.',q:'Welche Form passt? Yesterday, she ___ to school.',a:['go','goes','went'],correct:2},
+ {x:9.65,z:7.55,label:'Zettel hinter dem Blumentopf',tip:'Auf dem Zettel steht: une bibliothèque = eine Bibliothek.',q:'Was bedeutet „une bibliothèque“?',a:['eine Bibliothek','eine Schule','eine Küche'],correct:0},
+ {x:1.2,z:-8.1,label:'Karte am Lehrerpult',tip:'Auf der Karte steht: Pflanzen nehmen bei der Fotosynthese Kohlenstoffdioxid aus der Luft auf.',q:'Welchen Stoff nehmen Pflanzen bei der Fotosynthese aus der Luft auf?',a:['Sauerstoff','Kohlenstoffdioxid','Stickstoff'],correct:1}
+];
+const clueObjects=[]; clueData.forEach((c,i)=>{
+ let g=new THREE.Group();g.position.set(c.x,.02,c.z);scene.add(g);
+ if(i===0){
+   box(.42,.055,.31,M(0x5a4651),0,.30,0,g);
+   box(.19,.018,.27,paper,-.105,.337,0,g);
+   box(.19,.018,.27,paper,.105,.337,0,g);
+   box(.012,.025,.28,M(0x8a7663),0,.34,0,g);
+ }
+ if(i===1){
+   box(.25,.012,.18,paper,0,.58,.34,g);
+   box(.15,.006,.012,M(0x8c8170),0,.591,.29,g);
+ }
+ if(i===2){
+   box(.20,.018,.15,paper,0,.12,-.27,g).rotation.y=.24;
+   cyl(.012,.012,.12,M(0x8a7663),.04,.17,-.25,g);
+ }
+ if(i===3){
+   box(.28,.012,.19,paper,0,1.14,.12,g).rotation.y=-.12;
+   box(.34,.018,.24,M(0x8b735c),.03,1.16,.12,g).rotation.y=-.12;
+ }
+ clueObjects.push(g);
+});
+const teacher=person(0,-7.1,0x354d69,true);
+const nameCanvas=document.createElement('canvas');nameCanvas.width=300;nameCanvas.height=64;let nctx=nameCanvas.getContext('2d');nctx.fillStyle='#f3e3ba';nctx.roundRect(2,2,296,60,10);nctx.fill();nctx.fillStyle='#202a32';nctx.font='bold 32px Arial';nctx.textAlign='center';nctx.fillText('Frau Geßner',150,42);
+const tagTex=new THREE.CanvasTexture(nameCanvas);const tag=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.28),new THREE.MeshBasicMaterial({map:tagTex,transparent:true,depthTest:false}));tag.position.set(0,2.43,0);teacher.add(tag);
+// Visual vision radius: transparent forward cone and subtle ground radius
+const vision=new THREE.Mesh(new THREE.ConeGeometry(4.0,9.0,40,1,true),new THREE.MeshBasicMaterial({color:0xff3030,transparent:true,opacity:.105,side:THREE.DoubleSide,depthWrite:false}));
+vision.position.set(0,1.82,4.5);vision.rotation.x=-Math.PI/2;teacher.add(vision);
+const radiusRing=new THREE.Mesh(new THREE.RingGeometry(3.7,3.82,64),new THREE.MeshBasicMaterial({color:0xff3434,transparent:true,opacity:.24,side:THREE.DoubleSide}));
+radiusRing.rotation.x=-Math.PI/2;radiusRing.position.set(0,.015,0);teacher.add(radiusRing);
+// Red eye beams
+const beams=[];
+for(let s of [-1,1]){let b=new THREE.Mesh(new THREE.CylinderGeometry(.018,.04,1,8),new THREE.MeshBasicMaterial({color:0xff2020,transparent:true,opacity:.95}));scene.add(b);beams.push(b);}
+const homePos=()=>Math.hypot(camera.position.x-home.x,camera.position.z-(home.z+1.12));
+let seated=true,hasPaper=false,locked=false,started=false,dialogOpen=false,alert=0,seconds=35*60,active=0;
+let found=[false,false,false,false],done=[false,false,false,false],caughtCount=0,toastTimer=0;
+camera.position.set(home.x,1.34,home.z+1.12);camera.rotation.set(0,0,0);
+function toast(t){$('toast').textContent=t;$('toast').style.display='block';toastTimer=2.8;}
+
+function nextUnsolved(){ return done.findIndex(v=>!v); }
+function nextReady(){ return found.findIndex((v,i)=>v&&!done[i]); }
+function mission(){
+ $('progress').textContent=done.filter(Boolean).length+' / 4';
+ const ready=nextReady();
+ if(!hasPaper) $('missionText').textContent='Nimm das Aufgabenblatt auf deinem eigenen Tisch.';
+ else if(done.every(Boolean)) $('missionText').textContent='Alle vier Aufgaben geschafft! Setz dich an deinen Platz und gib die Arbeit ab (E).';
+ else if(ready>=0) $('missionText').textContent='Du hast einen Hinweis gefunden. Setz dich an deinen Platz und bearbeite Aufgabe '+(ready+1)+'.';
+ else $('missionText').textContent='Suche einen der vier versteckten Hinweise. Sie sind nicht auf einer Karte markiert.';
+ $('clues').textContent=found.map((v,i)=>v?'• Hinweis '+(i+1)+' gesichert':null).filter(Boolean).join('\n')||'Noch keine';
+}
+function openDialog(title,text,answers,callback){
+ dialogOpen=true;document.exitPointerLock?.();$('dlgTitle').textContent=title;$('dlgText').textContent=text;$('choices').innerHTML='';
+ answers.forEach((answer,i)=>{let b=document.createElement('button');b.className='choice';b.textContent=answer;b.addEventListener('click',()=>callback(i));$('choices').appendChild(b);});
+ $('shade').style.display='flex';
+}
+function closeDialog(){$('shade').style.display='none';dialogOpen=false;}
+$('close').onclick=closeDialog;
+function chooseTask(index){
+ const clue=clueData[index];
+ openDialog('Aufgabe '+(index+1),clue.q,clue.a,i=>{
+  if(i===clue.correct){done[index]=true;toast('Richtig! Aufgabe erledigt.');}
+  else{alert=Math.min(100,alert+D.wrong);toast('Leider falsch. Frau Geßner wird misstrauischer.');}
+  closeDialog();
+  mission();
+ });
+}
+function interact(){
+ if(seated){
+  if(!hasPaper){hasPaper=true;toast('Du hast dein Aufgabenblatt genommen. Steh auf und suche die Hinweise.');mission();return;}
+  const ready=nextReady();
+  if(ready>=0){chooseTask(ready);return;}
+  if(done.every(Boolean)){finish(false);return;}
+  toast('Du brauchst erst einen weiteren Hinweis. Steh auf und suche im Klassenzimmer.');return;
+ }
+ // Search by proximity; clues can be collected in any order.
+ let best=-1,bestD=2.35;
+ for(let i=0;i<clueData.length;i++){
+  if(found[i]||done[i])continue;
+  const c=clueData[i],d=Math.hypot(camera.position.x-c.x,camera.position.z-c.z);
+  if(d<bestD){bestD=d;best=i;}
+ }
+ if(best>=0){
+  found[best]=true;
+  toast('Hinweis '+(best+1)+' gefunden: '+clueData[best].tip);
+  mission();return;
+ }
+ if(homePos()<2.25){toast('Du bist an deinem Platz. Drücke die Leertaste, um dich hinzusetzen.');return;}
+ toast('Hier ist kein Hinweis in Reichweite. Suche zwischen Möbeln und Schulsachen.');
+}
+function toggleSeat(){
+ if(seated){seated=false;camera.position.y=1.68;toast('Du stehst auf. Suche jetzt den ersten Hinweis.');}
+ else if(homePos()<2.0){seated=true;camera.position.set(home.x,1.34,home.z+1.12);camera.rotation.x=0;toast('Du sitzt wieder an deinem Tisch.');}
+ else toast('Du musst zuerst zurück zu deinem eigenen Stuhl.');
+}
+const keys={};
+document.addEventListener('keydown',e=>{
+ keys[e.key.toLowerCase()]=true;
+ if(e.code==='Space'&&started&&!dialogOpen){e.preventDefault();toggleSeat();}
+ if(e.key.toLowerCase()==='e'&&started&&!dialogOpen)interact();
+ if(e.key==='Escape'&&dialogOpen)closeDialog();
+});
+document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
+// Maussteuerung: normal mit Pointer-Lock (Maus frei bewegen) und als Fallback per Ziehen.
+let dragging=false,lastMouseX=0,lastMouseY=0;
+function turnCamera(dx,dy){
+ camera.rotation.y-=dx*.0024;
+ camera.rotation.x-=dy*.0021;
+ camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-1.18,1.18);
+}
+renderer.domElement.addEventListener('pointerdown',e=>{
+ if(!started||dialogOpen)return;
+ dragging=true;lastMouseX=e.clientX;lastMouseY=e.clientY;
+ if(!locked&&renderer.domElement.requestPointerLock)renderer.domElement.requestPointerLock();
+});
+window.addEventListener('pointerup',()=>dragging=false);
+document.addEventListener('mousemove',e=>{
+ if(dialogOpen||!started)return;
+ if(locked){turnCamera(e.movementX,e.movementY);return;}
+ if(dragging){let dx=e.clientX-lastMouseX,dy=e.clientY-lastMouseY;lastMouseX=e.clientX;lastMouseY=e.clientY;turnCamera(dx,dy);}
+});
+renderer.domElement.addEventListener('click',()=>{if(started&&!dialogOpen&&!locked)renderer.domElement.requestPointerLock?.();});
+function startGame(){applyDiff();started=true;$('start').style.display='none';mission();renderer.domElement.requestPointerLock?.();toast('Nimm das Blatt auf deinem Tisch mit E.');}
+$('startBtn').onclick=startGame;
+$('again').onclick=()=>{$('caught').style.display='none';camera.position.set(home.x,1.34,home.z+1.12);camera.rotation.x=0;seated=true;alert=0;started=true;renderer.domElement.requestPointerLock?.();};
+const routes=[
+ [{x:0,z:-7.1},{x:-8,z:-5.1},{x:-8,z:1.4},{x:-4,z:4.0},{x:4,z:4.0},{x:8,z:1.4},{x:8,z:-5.1},{x:0,z:-7.1}],
+ [{x:0,z:-7.1},{x:8,z:-7.0},{x:8,z:3.7},{x:3,z:4.8},{x:-7,z:3.7},{x:-8,z:-4.0},{x:0,z:-7.1}],
+ [{x:0,z:-7.1},{x:-4,z:-3.2},{x:4,z:-3.2},{x:4,z:4.6},{x:-4,z:4.6},{x:-4,z:-3.2},{x:0,z:-7.1}]
+];
+let routeNo=0,routeIdx=0,routeAge=0,wait=0;
+function teacherUpdate(dt){
+ routeAge+=dt;if(routeAge>D.route){routeAge=0;routeNo=(routeNo+1)%routes.length;routeIdx=0;toast('Frau Geßner wechselt ihren Laufweg.');}
+ let t=routes[routeNo][routeIdx],dx=t.x-teacher.position.x,dz=t.z-teacher.position.z,d=Math.hypot(dx,dz);
+ if(d<.2){routeIdx=(routeIdx+1)%routes[routeNo].length;wait=.45;}
+ else if(wait>0)wait-=dt;
+ else{teacher.position.x+=dx/d*D.speed*dt;teacher.position.z+=dz/d*D.speed*dt;teacher.rotation.y=Math.atan2(dx,dz);}
+ // Cone and eyes are oriented in the direction of travel. The cone is a visible approximate vision radius.
+ const delta=new THREE.Vector3(camera.position.x-teacher.position.x,0,camera.position.z-teacher.position.z);
+ const distance=delta.length();delta.normalize();
+ const forward=new THREE.Vector3(0,0,1).applyQuaternion(teacher.quaternion);
+ const inView=distance<D.range && forward.dot(delta)>D.dot;
+ const sees=!seated&&inView;
+ beams.forEach((b,i)=>{
+  b.visible=sees;
+  if(sees){let start=new THREE.Vector3(teacher.position.x+(i?1:-1)*.11,1.94,teacher.position.z).add(forward.clone().multiplyScalar(.28));let end=new THREE.Vector3(camera.position.x,1.55,camera.position.z);let v=end.clone().sub(start);b.position.copy(start).add(end).multiplyScalar(.5);b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.clone().normalize());b.scale.y=v.length();}
+ });
+ if(sees)alert=Math.min(100,alert+dt*(distance<4?35:23)*D.gain);else alert=Math.max(0,alert-dt*D.decay);
+ $('fill').style.width=alert+'%';
+ $('alertText').textContent=alert>75?'Sie schaut dich direkt an!':alert>35?'Sie hat dich fast entdeckt …':'Sie kontrolliert den Raum.';
+ if(alert>=100){caughtCount++;$('caught').style.display='flex';document.exitPointerLock?.();started=false;seconds=Math.max(0,seconds-D.penalty);alert=0;}
+}
+function move(dt){
+ if(!started||dialogOpen||seated)return;
+ // Keyboard movement is deliberately independent of pointer lock.
+ let f=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0);
+ let side=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);
+ if(!f&&!side)return;
+ let dir=new THREE.Vector3(side,0,-f).normalize().applyAxisAngle(new THREE.Vector3(0,1,0),camera.rotation.y);
+ let speed=keys.shift?1.55:3.25;playerMoving=true;playerSneak=!!keys.shift;
+ {const nx=THREE.MathUtils.clamp(camera.position.x+dir.x*speed*dt,-11.7,11.7);if(!blocked(nx,camera.position.z))camera.position.x=nx;}
+ {const nz=THREE.MathUtils.clamp(camera.position.z+dir.z*speed*dt,-10.65,10.4);if(!blocked(camera.position.x,nz))camera.position.z=nz;}
+ camera.position.y=1.68;
+}
+
+function updateAction(){
+ if(!started)return;
+ if(seated){
+  const ready=nextReady();
+  $('action').textContent=!hasPaper?'E – Aufgabenblatt vom Tisch nehmen':ready>=0?'E – Aufgabe '+(ready+1)+' lösen':done.every(Boolean)?'E – Arbeit abgeben':'E – Aufgabenblatt ansehen';
+  $('sub').textContent='Leertaste – aufstehen · E – Blatt nehmen oder Aufgabe lösen';
+ }else{
+  let nearby=-1,dist=2.35;
+  for(let i=0;i<clueData.length;i++)if(!found[i]&&!done[i]){
+   const c=clueData[i],d=Math.hypot(camera.position.x-c.x,camera.position.z-c.z);
+   if(d<dist){dist=d;nearby=i;}
+  }
+  $('action').textContent=nearby>=0?'E – versteckten Hinweis untersuchen':'E – in der Nähe nach Hinweisen suchen';
+  $('sub').textContent='WASD bewegen · Maus umsehen · E suchen · Leertaste am eigenen Platz hinsetzen · Shift schleichen';
+ }
+}
+
+// ===== Überarbeitung: zusätzliche Details =====
+let playerMoving=false,playerSneak=false;
+// Kollision mit Tischen, Lehrerpult und Schrank
+const solid=[];desks.forEach(d=>solid.push([d.x-1.35,d.x+1.35,d.z-1.0,d.z+1.85]));
+solid.push([home.x-1.35,home.x+1.35,home.z-1.0,home.z+.75]);solid.push([-1.35,1.35,-9.6,-7.7]);solid.push([-12.3,-9.5,-9.4,-8.2]);
+const blocked=(x,z)=>solid.some(r=>x>r[0]&&x<r[1]&&z>r[2]&&z<r[3]);
+// Beschriftete Flächen: Tafel, Poster, Türschild
+function label(lines,w,h,x,y,z,bg,fg,px){const c=document.createElement('canvas');c.width=512;c.height=Math.round(512*h/w);const q=c.getContext('2d');q.fillStyle=bg;q.fillRect(0,0,c.width,c.height);q.fillStyle=fg;q.textAlign='center';q.font='bold '+px+'px Arial';const n=lines.length;lines.forEach((t,i)=>q.fillText(t,256,c.height*(i+1)/(n+1)+px*.33));const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t}));m.position.set(x,y,z);scene.add(m);return m;}
+label(['Klassenarbeit – 35 Minuten','Bitte leise! Nicht abschreiben!','Viel Erfolg ✓'],7.0,1.25,0,3.55,-11.15,'#2a4f43','#e4ecdc',34);
+[['Biologie','Zelle & Pflanze','#c3cdbc'],['Irregular Verbs','go – went – gone','#d3c5a8'],['Pythagoras','a² + b² = c²','#bfc8d8']].forEach((p,j)=>label([p[0],p[1]],1.1,.76,-10.8+j*2.0,2.55,-11.2,p[2],'#26343c',36));
+label(['Raum 214','Klasse 9b'],.7,.3,10.7,2.55,-11.16,'#26343c','#ffffff',44);
+// fensterrahmen
+const frm=M(0xf6f2e7);for(let i=0;i<5;i++){const x=-10+i*4.8;box(.07,2.0,.05,frm,x,3.1,-11.12);box(3.45,.07,.05,frm,x,3.1,-11.12);}
+// Uhr mit echten Zeigern
+const mg=new THREE.Group(),hg=new THREE.Group();mg.position.set(-8.7,4.55,-11.1);hg.position.copy(mg.position);scene.add(mg,hg);
+box(.025,.28,.015,M(0x14202a),0,.13,0,mg);box(.032,.18,.015,M(0x14202a),0,.08,0,hg);
+// Globus auf dem Lehrerpult
+const globe=new THREE.Group();globe.position.set(.88,1.33,-8.45);scene.add(globe);cyl(.09,.11,.05,M(0x2f2a28),.88,1.15,-8.45);
+const gs=new THREE.Mesh(new THREE.SphereGeometry(.17,20,14),M(0x3f7fae,.5));gs.castShadow=true;globe.add(gs);globe.rotation.z=.4;
+for(const [a,b] of [[.6,.3],[2.3,-.2],[4,.5],[5.4,0]]){const l=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),M(0x5d9a55));l.position.set(Math.cos(b)*Math.sin(a)*.15,Math.sin(b)*.15,Math.cos(b)*Math.cos(a)*.15);globe.add(l);}
+// Beine der Lehrerin
+const legs=[-1,1].map(s=>{const p=new THREE.Group();p.position.set(s*.16,.58,0);teacher.add(p);box(.2,.58,.2,M(0x26303b),0,-.29,0,p);return p;});
+// Staubpartikel im Licht
+const dN=260,dGeo=new THREE.BufferGeometry(),dPos=new Float32Array(dN*3);for(let i=0;i<dN;i++){dPos[i*3]=(Math.random()-.5)*22;dPos[i*3+1]=.5+Math.random()*4.3;dPos[i*3+2]=(Math.random()-.5)*20;}
+dGeo.setAttribute('position',new THREE.BufferAttribute(dPos,3));scene.add(new THREE.Points(dGeo,new THREE.PointsMaterial({color:0xfff4d8,size:.035,transparent:true,opacity:.55,depthWrite:false})));
+// Schimmern bei Hinweisen in der Nähe
+const glows=clueData.map((c,i)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshBasicMaterial({color:0xffe28a,transparent:true,opacity:.8}));m.position.set(c.x,[.5,.75,.3,1.3][i],c.z);m.visible=false;scene.add(m);return m;});
+// Raumplan (M)
+const mm=document.createElement('canvas');mm.width=150;mm.height=138;mm.style.cssText='position:absolute;right:12px;bottom:13px;border:1px solid #ffffff40;border-radius:10px;background:#101b27cc';$('hud').appendChild(mm);const mq=mm.getContext('2d');
+addEventListener('keydown',e=>{if(e.key.toLowerCase()==='m')mm.style.display=mm.style.display==='none'?'block':'none';});
+const MX=x=>(x+12.5)*6,MZ=z=>(z+11.5)*6;
+function drawMap(){mq.clearRect(0,0,150,138);mq.fillStyle='#ffffff30';desks.forEach(d=>mq.fillRect(MX(d.x)-6,MZ(d.z)-4,12,8));mq.fillRect(MX(home.x)-6,MZ(home.z)-4,12,8);
+ const tx=MX(teacher.position.x),tz=MZ(teacher.position.z),tr=teacher.rotation.y,a=Math.acos(D.dot);mq.fillStyle='#ff303038';mq.beginPath();mq.moveTo(tx,tz);for(const s of [-1,1])mq.lineTo(tx+Math.sin(tr+s*a)*D.range*6,tz+Math.cos(tr+s*a)*D.range*6);mq.fill();
+ mq.fillStyle='#ff4040';mq.beginPath();mq.arc(tx,tz,4,0,7);mq.fill();
+ const px=MX(camera.position.x),pz=MZ(camera.position.z),r=camera.rotation.y;mq.fillStyle='#fff';mq.beginPath();mq.arc(px,pz,3.5,0,7);mq.fill();mq.strokeStyle='#fff';mq.beginPath();mq.moveTo(px,pz);mq.lineTo(px-Math.sin(r)*9,pz-Math.cos(r)*9);mq.stroke();
+ mq.fillStyle='#ffffffaa';mq.font='10px Arial';mq.fillText('M = ausblenden',6,132);}
+// Sound (WebAudio, keine Dateien nötig)
+let AC;function aud(){if(!AC)try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+function tone(f,d,type='sine',v=.1,f2){const a=aud();if(!a)return;v=Math.max(v,.002);const o=a.createOscillator(),g=a.createGain(),n=a.currentTime;o.type=type;o.frequency.setValueAtTime(f,n);if(f2)o.frequency.exponentialRampToValueAtTime(f2,n+d);g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(a.destination);o.start();o.stop(n+d);}
+$('startBtn').addEventListener('click',()=>aud());
+// Notenscreen
+function finish(timeUp){started=false;document.exitPointerLock?.();const n=done.filter(Boolean).length;const g=n===4?(caughtCount===0?1:caughtCount<3?2:3):n===3?3:n===2?4:n===1?5:6;
+ const names=['','sehr gut','gut','befriedigend','ausreichend','mangelhaft','ungenügend'];const e=document.createElement('div');
+ e.style.cssText='position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:#101923f2;color:#fff;text-align:center;font-family:Arial,sans-serif';
+ e.innerHTML=`<div style="max-width:480px;padding:30px"><h1 style="font-size:34px;margin:0 0 6px">${timeUp?'Zeit ist um!':'Arbeit abgegeben!'}</h1><div style="font-size:96px;color:#f1c66c;font-weight:bold;line-height:1.1">${g}</div><div style="font-size:20px;margin-bottom:14px">${names[g]}</div><p style="line-height:1.7;color:#d6e0e8">Stufe: ${D.name}<br>Aufgaben gelöst: ${n} von 4<br>Erwischt: ${caughtCount}×<br>Restzeit: ${Math.floor(seconds/60)} Min.</p><button onclick="location.reload()" style="background:#f1c66c;border:0;border-radius:9px;padding:12px 20px;font-size:16px;font-weight:bold;cursor:pointer">Nochmal spielen</button></div>`;
+ document.body.appendChild(e);tone(g<=3?660:200,.5,'triangle',.12);}
+// Laufende Animationen und Effekte
+let ltx=0,ltz=-7.1,stepT=0,pStep=0,lastSec=-1,lastFound=0,lastDone=0,lastCaught=0,lastAlert=0,beat=0,flk=0;
+const lamps=scene.children.filter(o=>o.isPointLight);lamps.forEach(l=>l.userData.i=l.intensity);
+function extras(t,dt){
+ const d=new Date();mg.rotation.z=-(d.getMinutes()+d.getSeconds()/60)/60*Math.PI*2;hg.rotation.z=-((d.getHours()%12)+d.getMinutes()/60)/12*Math.PI*2;
+ students.forEach((s,i)=>{s.rotation.y=Math.sin(t*.45+i*1.9)*.16;s.position.y=Math.abs(Math.sin(t*2.2+i))*.012;});
+ globe.rotation.y+=dt*.4;
+ for(let i=0;i<dN;i++){dPos[i*3+1]+=dt*.03;dPos[i*3]+=Math.sin(t+i)*.002;if(dPos[i*3+1]>4.8)dPos[i*3+1]=.5;}dGeo.attributes.position.needsUpdate=true;
+ const mv=Math.hypot(teacher.position.x-ltx,teacher.position.z-ltz)/Math.max(dt,.001);ltx=teacher.position.x;ltz=teacher.position.z;
+ const sw=Math.min(1,mv/1.0),ph=Math.sin(t*7);legs[0].rotation.x=ph*.5*sw;legs[1].rotation.x=-ph*.5*sw;teacher.position.y=Math.abs(ph)*.04*sw;
+ const dT=Math.hypot(camera.position.x-teacher.position.x,camera.position.z-teacher.position.z);
+ if(mv>.5){stepT+=dt;if(stepT>.55){stepT=0;tone(80,.09,'triangle',.25*Math.max(0,1-dT/12),45);}}
+ const nf=found.filter(Boolean).length,nd=done.filter(Boolean).length;
+ if(nf>lastFound){tone(1200,.08,'sine',.08);setTimeout(()=>tone(1600,.12,'sine',.08),70);}lastFound=nf;
+ if(nd>lastDone){tone(520,.12,'triangle',.12);setTimeout(()=>tone(780,.12,'triangle',.12),110);setTimeout(()=>tone(1040,.25,'triangle',.12),220);}lastDone=nd;
+ if(caughtCount>lastCaught)tone(400,.7,'sawtooth',.15,70);lastCaught=caughtCount;
+ if(alert-lastAlert>=14&&alert<100)tone(160,.35,'sawtooth',.1,90);lastAlert=alert;
+ if(!started){playerMoving=false;return;}
+ const s=Math.floor(seconds);if(s!==lastSec){lastSec=s;tone(1700,.015,'square',.008);}
+ if(playerMoving&&!playerSneak){pStep+=dt;if(pStep>.38){pStep=0;tone(110,.07,'triangle',.05,60);}if(dT<D.noiseR){alert=Math.min(100,alert+dt*10*D.noise);if(Math.random()<dt*.6)toast('Zu laut! Schleich mit Shift.');}}
+ else if(playerMoving){pStep+=dt;if(pStep>.7){pStep=0;tone(110,.05,'triangle',.015,60);}}
+ playerMoving=false;
+ if(alert>40){beat-=dt;if(beat<=0){beat=1.15-alert/140;tone(55,.12,'sine',.22);setTimeout(()=>tone(50,.1,'sine',.16),150);}}
+ if(flk>0){flk-=dt;lamps.forEach(l=>l.intensity=l.userData.i*(Math.random()>.5?.35:1));if(flk<=0)lamps.forEach(l=>l.intensity=l.userData.i);}else if(Math.random()<dt*.04)flk=.25;
+ glows.forEach((m,i)=>{const c=clueData[i],dd=Math.hypot(camera.position.x-c.x,camera.position.z-c.z);m.visible=!seated&&!found[i]&&!done[i]&&dd<4.2;if(m.visible){m.scale.setScalar(1+.4*Math.sin(t*5));m.material.opacity=.45+.35*Math.sin(t*5);}});
+ drawMap();
+}
+// Schwierigkeitsstufen
+const DIFF={
+ leicht:{name:'Leicht',info:'45 Min., langsame Lehrerin, kleines Sichtfeld, milde Strafen, kaum Lärm-Probleme.',time:2700,speed:.8,range:7,dot:.8,gain:.6,decay:14,penalty:20,wrong:8,noiseR:3,noise:.4,route:34},
+ normal:{name:'Normal',info:'35 Min., das ursprüngliche Spielgefühl.',time:2100,speed:1.05,range:8.8,dot:.68,gain:1,decay:9,penalty:45,wrong:15,noiseR:5.5,noise:1,route:26},
+ schwer:{name:'Schwer',info:'25 Min., schnellere Lehrerin, großes Sichtfeld, hohe Strafen, sie hört Rennen von weit weg.',time:1500,speed:1.4,range:10.5,dot:.6,gain:1.4,decay:6,penalty:75,wrong:25,noiseR:7,noise:1.6,route:18},
+ hardcore:{name:'Albtraum',info:'18 Min., Frau Geßner rennt fast, sieht alles und wechselt ständig die Route. Viel Glück.',time:1080,speed:1.8,range:12,dot:.52,gain:2,decay:3,penalty:100,wrong:40,noiseR:9,noise:2.5,route:12}
+};
+let D=DIFF.normal;
+function pickDiff(k){D=DIFF[k];document.querySelectorAll('.dbtn').forEach(b=>{const on=b.dataset.d===k;b.style.opacity=on?1:.5;b.style.outline=on?'3px solid #fff':'none';});$('diffInfo').textContent=D.info;$('time').textContent=String(Math.floor(D.time/60)).padStart(2,'0')+':00';}
+function applyDiff(){seconds=D.time;const k=D.range/8.8;vision.scale.setScalar(k);vision.position.z=4.5*k;}
+document.querySelectorAll('.dbtn').forEach(b=>b.addEventListener('click',()=>pickDiff(b.dataset.d)));
+pickDiff('normal');
+// ===== Ende Überarbeitung =====
+let last=performance.now();
+function frame(now){
+ requestAnimationFrame(frame);let dt=Math.min((now-last)/1000,.04);last=now;
+ if(started){seconds=Math.max(0,seconds-dt);$('time').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(Math.floor(seconds%60)).padStart(2,'0');move(dt);teacherUpdate(dt);
+  if(seconds<=0)finish(true);
+ }
+ if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').style.display='none';}
+ updateAction();extras(now/1000,dt);renderer.render(scene,camera);
+}
+requestAnimationFrame(frame);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+})();
+</script>
+</body></html>
